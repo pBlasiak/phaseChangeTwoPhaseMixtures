@@ -25,9 +25,12 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "Tanasawa.H"
-#include "fvc.H"
+//#include "fvc.H"
 #include "mathematicalConstants.H"
 #include "addToRunTimeSelectionTable.H"
+
+//#include "fvCFD.H"
+#include "fvcSmooth.H"
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
@@ -76,10 +79,126 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotAlphal()
     volScalarField limitedAlpha1 = min(max(alpha1(), scalar(0)), scalar(1));
 	volScalarField gradAlphal = mag(fvc::grad(limitedAlpha1));
 
+//    volScalarField psi
+//    (
+//        IOobject
+//        (
+//            "psi",
+//            alpha1().time().timeName(),
+//            alpha1().db(),
+//            IOobject::NO_READ,
+//            IOobject::NO_WRITE
+//        ),
+//		alpha1().mesh(),
+//        dimensionedScalar("psi0", dimensionSet(1,-3,-1,0,0,0,0), 0 ),
+//		"zeroGradient"
+//    );
+//	
+	//dimensionedScalar DPsi = phaseChangeTwoPhaseMixtureCoeffs_.lookup("DPsi");
+	scalar spread_ = 3;
+    dimensionedScalar DPsi
+    (
+        "D",
+        dimArea,
+        spread_/sqr(gAverage(alpha1().mesh().nonOrthDeltaCoeffs()))
+    );
+////- alpha cutoff value for source term distribution 
+////  (no source terms in cells with cutoff < alpha1 < 1-cutoff)
+scalar cutoff = 1e-3;
+//
+//////- Calculation of source terms according to Hardt/Wondra (JCP, 2008)
+////volScalarField psi0Tild = mag(fvc::grad(alpha1));
+////
+////dimensionedScalar intPsi0Tild = fvc::domainIntegrate(psi0Tild);
+////dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate(alpha1*psi0Tild);
+////
+////dimensionedScalar N ("N", dimensionSet(0,0,0,0,0,0,0), 2.0);
+////if (intAlphaPsi0Tild.value() > 1e-99)
+////{
+////	N = intPsi0Tild/intAlphaPsi0Tild;
+////}
+////
+////volScalarField jEvap = (T-Tsat)/(Rph*hEvap);
+////
+////psi0 = N*jEvap*alpha1*psi0Tild;
+//
+//
+//
+//
 	// minus sign "-" to provide mc > 0  and mv < 0
 	mCondNoAlphal_ = -mCoeff_*neg(T_ - TSat_)*(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0));
 	mEvapNoAlphal_ = -mCoeff_*pos(T_ - TSat_)*(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0));
 
+	fvc::spreadSource
+	(
+		mEvapNoAlphal_,
+		mEvapNoAlphal_,
+		alpha1(),
+		alpha2(),
+		DPsi,
+		cutoff
+	);
+//
+//dimensionedScalar intPsi0 = fvc::domainIntegrate(mEvapNoAlphal_);
+////- Smearing of source term field
+//fvScalarMatrix psiEqn
+//(
+//	fvm::Sp(scalar(1),psi) - fvm::laplacian(DPsi,psi) == mEvapNoAlphal_
+//);
+//
+//Info<< "SOLVING" << endl;
+//
+//psiEqn.solve();
+//
+////- Cut cells with cutoff < alpha1 < 1-cutoff and rescale remaining source term field
+//dimensionedScalar intPsiLiquid ("intPsiLiquid", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+//dimensionedScalar intPsiVapor ("intPsiLiquid", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+//
+//forAll(alpha1().mesh().C(),iCell)
+//{
+//	if (limitedAlpha1[iCell] < cutoff)
+//	{
+//		intPsiVapor.value() += (1.0-limitedAlpha1[iCell])*psi[iCell]*alpha1().mesh().V()[iCell];
+//	}
+//	else if (limitedAlpha1[iCell] > 1.0-cutoff)
+//	{
+//		intPsiLiquid.value() += limitedAlpha1[iCell]*psi[iCell]*alpha1().mesh().V()[iCell];
+//	}
+//}
+//
+////- Calculate Nl and Nv
+//dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
+//dimensionedScalar Nv ("Nv", dimensionSet(0,0,0,0,0,0,0), 2.0);
+//
+//reduce(intPsiLiquid.value(),sumOp<scalar>());
+//reduce(intPsiVapor.value(),sumOp<scalar>());
+//
+//if (intPsiLiquid.value() > 1e-99)
+//{
+//    Nl = intPsi0/intPsiLiquid;
+//}
+//if (intPsiVapor.value() > 1e-99)
+//{
+//    Nv = intPsi0/intPsiVapor;
+//}
+//
+//        
+////- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
+//forAll(alpha1().mesh().C(),iCell)
+//{
+//	if (limitedAlpha1[iCell] < cutoff)
+//	{
+//		mEvapNoAlphal_[iCell] = Nv.value()*(1.0-limitedAlpha1[iCell])*psi[iCell];
+//	}
+//	else if (limitedAlpha1[iCell] > 1.0-cutoff)
+//	{
+//		mEvapNoAlphal_[iCell] = -Nl.value()*limitedAlpha1[iCell]*psi[iCell];
+//	}
+//	else
+//	{
+//		mEvapNoAlphal_[iCell] = 0.0;
+//	}
+//}
 	// In Tanasawa model there is no alpha term
 	// probably it should be divided here by alphal and (1-alphal) but it
 	// could produce errrors. To avoid this and follow the algorithm in alphaEqn.H
