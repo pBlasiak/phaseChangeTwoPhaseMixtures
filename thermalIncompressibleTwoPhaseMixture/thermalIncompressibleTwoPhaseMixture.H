@@ -35,8 +35,8 @@ SourceFiles
 #ifndef thermalIncompressibleTwoPhaseMixture_H
 #define thermalIncompressibleTwoPhaseMixture_H
 
-//#include "incompressibleTwoPhaseMixture.H"
-#include "immiscibleIncompressibleSmoothedTwoPhaseMixture.H"
+#include "incompressibleTwoPhaseMixture.H"
+//#include "immiscibleIncompressibleSmoothedTwoPhaseMixture.H"
 #include "thermalConductivity.H"
 #include "fvc.H"
 
@@ -51,7 +51,8 @@ namespace Foam
 
 class thermalIncompressibleTwoPhaseMixture
 :
-    public immiscibleIncompressibleSmoothedTwoPhaseMixture
+    //public immiscibleIncompressibleSmoothedTwoPhaseMixture
+    public incompressibleTwoPhaseMixture
 {
 protected:
 
@@ -144,7 +145,7 @@ public:
         //- Correct the transport and interface properties
         virtual void correct()
         {
-            immiscibleIncompressibleSmoothedTwoPhaseMixture::correct();
+			incompressibleTwoPhaseMixture::correct();
         }
 
         //- Read base transportProperties dictionary

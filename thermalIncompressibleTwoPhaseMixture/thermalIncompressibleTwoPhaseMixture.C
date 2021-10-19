@@ -42,7 +42,7 @@ Foam::thermalIncompressibleTwoPhaseMixture::thermalIncompressibleTwoPhaseMixture
     const surfaceScalarField& phi
 )
 :
-    immiscibleIncompressibleSmoothedTwoPhaseMixture(U, phi),
+    incompressibleTwoPhaseMixture(U, phi),
 
     k1_
     (
