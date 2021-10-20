@@ -50,9 +50,12 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::Tanasawa
 :
     phaseChangeTwoPhaseMixture(typeName, U, phi),
 
-    cond_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("condensation")),
-    evap_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("evaporation")),
-    gamma_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("gamma")),
+    //cond_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("condensation")),
+    cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
+    //evap_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("evaporation")),
+    evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
+    //gamma_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("gamma")),
+    gamma_("gamma", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
    	mCoeff_(2.0*gamma_/(2.0 - gamma_)/sqrt(2.0*M_PI*R_)*hEvap_*rho2())
 {
 	Info<< "Tanasawa model settings:  " << endl;
@@ -70,31 +73,8 @@ Foam::volScalarField Foam::phaseChangeTwoPhaseMixtures::Tanasawa::calcGradAlphal
 }
 
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
-Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotAlphal()
+Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotAlphal() const
 {
-    //const dimensionedScalar T0("0", dimTemperature, 0.0);
-    volScalarField limitedAlpha1 = min(max(alpha1(), scalar(0)), scalar(1));
-	volScalarField gradAlphal = mag(fvc::grad(limitedAlpha1));
-
-	// minus sign "-" to provide mc > 0  and mv < 0
-	mCondNoAlphal_ = -mCoeff_*neg(T_ - TSat_)*(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0));
-	mEvapNoAlphal_ = -mCoeff_*pos(T_ - TSat_)*(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0));
-
-	// In Tanasawa model there is no alpha term
-	// probably it should be divided here by alphal and (1-alphal) but it
-	// could produce errrors. To avoid this and follow the algorithm in alphaEqn.H
-	// the modified Tanasawa model is implemented with additional multiplication
-	// by (1-alphal) for condensation and alphal for evaporation.
-	// Thus, the terms in pEqn and TEqn have to be also multiplied by these terms.
-	// One can try to implement invAlpha which is zero for alphal = 0 otherwise
-	// 1/alphal and multiply it by mCondAlphal_ and mEvapAlphal_
-	mCondAlphal_   = mCondNoAlphal_*(1-limitedAlpha1);
-	mEvapAlphal_   = mEvapNoAlphal_*limitedAlpha1;
-
-	// minus sign to provide mc > 0  and mv > 0
-	mCondNoTmTSat_ = -mCoeff_*neg(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0))*(1-limitedAlpha1);
-	mEvapNoTmTSat_ =  mCoeff_*pos(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0))*limitedAlpha1;
-
 	if (cond_ && evap_)
 	{
 		return Pair<tmp<volScalarField> >
@@ -202,6 +182,34 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotT() const
 		    mEvapNoTmTSat_*scalar(0)
 		);
 	}
+}
+
+void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::correct()
+{
+	phaseChangeTwoPhaseMixture::correct();
+
+    //const dimensionedScalar T0("0", dimTemperature, 0.0);
+    volScalarField limitedAlpha1 = min(max(alpha1(), scalar(0)), scalar(1));
+	volScalarField gradAlphal = mag(fvc::grad(limitedAlpha1));
+
+	// minus sign "-" to provide mc > 0  and mv < 0
+	mCondNoAlphal_ = -mCoeff_*neg(T_ - TSat_)*(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0));
+	mEvapNoAlphal_ = -mCoeff_*pos(T_ - TSat_)*(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0));
+
+	// In Tanasawa model there is no alpha term
+	// probably it should be divided here by alphal and (1-alphal) but it
+	// could produce errrors. To avoid this and follow the algorithm in alphaEqn.H
+	// the modified Tanasawa model is implemented with additional multiplication
+	// by (1-alphal) for condensation and alphal for evaporation.
+	// Thus, the terms in pEqn and TEqn have to be also multiplied by these terms.
+	// One can try to implement invAlpha which is zero for alphal = 0 otherwise
+	// 1/alphal and multiply it by mCondAlphal_ and mEvapAlphal_
+	mCondAlphal_   = mCondNoAlphal_*(1-limitedAlpha1);
+	mEvapAlphal_   = mEvapNoAlphal_*limitedAlpha1;
+
+	// minus sign to provide mc > 0  and mv > 0
+	mCondNoTmTSat_ = -mCoeff_*neg(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0))*(1-limitedAlpha1);
+	mEvapNoTmTSat_ =  mCoeff_*pos(T_ - TSat_)*gradAlphal/sqrt(pow(TSat_,3.0))*limitedAlpha1;
 }
 
 bool Foam::phaseChangeTwoPhaseMixtures::Tanasawa::read()

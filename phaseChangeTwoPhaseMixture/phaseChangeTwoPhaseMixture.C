@@ -265,7 +265,7 @@ void Foam::phaseChangeTwoPhaseMixture::calcTSatLocal()
 }
 
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
-Foam::phaseChangeTwoPhaseMixture::vDotAlphal() 
+Foam::phaseChangeTwoPhaseMixture::vDotAlphal() const
 {
     volScalarField alphalCoeff(1.0/rho1() - alpha1()*(1.0/rho1() - 1.0/rho2()));
     Pair<tmp<volScalarField> > mDotAlphal = this->mDotAlphal();

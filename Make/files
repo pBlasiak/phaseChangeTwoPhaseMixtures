@@ -7,10 +7,6 @@ thermalIncompressibleTwoPhaseMixture/thermalConductivityModels/Harmonic/Harmonic
 thermalIncompressibleTwoPhaseMixture/thermalConductivityModels/HarmonicDensityWeighted/HarmonicDensityWeighted.C
 phaseChangeTwoPhaseMixture/phaseChangeTwoPhaseMixture.C
 phaseChangeTwoPhaseMixture/newPhaseChangeTwoPhaseMixture.C
-Lee/Lee.C
-ChoiZhang/ChoiZhang.C
-Xu/Xu.C
 Tanasawa/Tanasawa.C
-NichitaThome/NichitaThome.C
 
 LIB = $(FOAM_USER_LIBBIN)/libphaseChangeTwoPhaseMixturesPB
