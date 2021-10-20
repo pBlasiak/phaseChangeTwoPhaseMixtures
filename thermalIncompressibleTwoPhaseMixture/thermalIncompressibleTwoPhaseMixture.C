@@ -48,25 +48,29 @@ Foam::thermalIncompressibleTwoPhaseMixture::thermalIncompressibleTwoPhaseMixture
     (
         "k1_",
         dimEnergy/dimTime/dimLength/dimTemperature,
-        subDict(phase1Name_).lookup("k")
+        subDict(phase1Name_),
+		"k"
     ),
     k2_
     (
         "k2_",
         k1_.dimensions(),
-        subDict(phase2Name_).lookup("k")
+        subDict(phase2Name_),
+		"k"
 	),
     cp1_ 
 	(
         "cp1",
         dimEnergy/dimTemperature/dimMass,
-        subDict(phase1Name_).lookup("cp")
+        subDict(phase1Name_),
+		"cp"
     ),
     cp2_
     (
         "cp2",
         dimEnergy/dimTemperature/dimMass,
-        subDict(phase2Name_).lookup("cp")
+        subDict(phase2Name_),
+		"cp"
     ),
     thermalConductivityModel_
     (
