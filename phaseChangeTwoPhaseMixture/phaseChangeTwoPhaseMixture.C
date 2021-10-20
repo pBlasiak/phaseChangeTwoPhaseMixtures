@@ -216,7 +216,8 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	),
 	p_(U.db().lookupObject<volScalarField>("p")),
 	T_(U.db().lookupObject<volScalarField>("T")),
-    TSatG_("TSatGlobal", dimTemperature, phaseChangeTwoPhaseMixtureCoeffs_.lookup("TSatGlobal")),
+    //TSatG_("TSatGlobal", dimTemperature, phaseChangeTwoPhaseMixtureCoeffs_.lookup("TSatGlobal")),
+    TSatG_("TSatGlobal", dimTemperature, phaseChangeTwoPhaseMixtureCoeffs_),
     TSat_
     (
         IOobject
@@ -230,9 +231,12 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
         U.mesh(),
 		TSatG_
     ),
-    pSat_("pSat", dimPressure, phaseChangeTwoPhaseMixtureCoeffs_.lookup("pSat")),
-    hEvap_("hEvap", dimEnergy/dimMass, phaseChangeTwoPhaseMixtureCoeffs_.lookup("hEvap")),
-    R_("R", dimGasConstant, phaseChangeTwoPhaseMixtureCoeffs_.lookup("R")),
+    //pSat_("pSat", dimPressure, phaseChangeTwoPhaseMixtureCoeffs_.lookup("pSat")),
+    pSat_("pSat", dimPressure, phaseChangeTwoPhaseMixtureCoeffs_),
+    //hEvap_("hEvap", dimEnergy/dimMass, phaseChangeTwoPhaseMixtureCoeffs_.lookup("hEvap")),
+    hEvap_("hEvap", dimEnergy/dimMass, phaseChangeTwoPhaseMixtureCoeffs_),
+    //R_("R", dimGasConstant, phaseChangeTwoPhaseMixtureCoeffs_.lookup("R")),
+    R_("R", dimGasConstant, phaseChangeTwoPhaseMixtureCoeffs_),
     TSatLocalPressure_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("TSatLocalPressure"))),
 	printPhaseChange_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("printPhaseChange")))
 {
