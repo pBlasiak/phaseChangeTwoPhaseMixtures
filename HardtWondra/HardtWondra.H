@@ -141,17 +141,17 @@ public:
         //- Return the mass condensation and vaporisation rates as a
         //  coefficient to multiply (Tsat - T) for the condensation rate
         //  and a coefficient to multiply  (T - Tsat) for the vaporisation rate
-        virtual Pair<tmp<volScalarField>> mDotDeltaT() const;
+        //virtual Pair<tmp<volScalarField>> mDotDeltaT() const;
 
         //- Source for T equarion
-        virtual tmp<fvScalarMatrix> TSource() const;
+        //virtual tmp<fvScalarMatrix> TSource() const;
 
         //- Volumetric source for alpha (used by alphaEq)
         //virtual Pair<tmp<volScalarField>> vDotAlphal() const;
 
         //- Return the volumetric condensation and vaporisation rates as
         //  coefficients (used by p_rghEq)
-        virtual Pair<tmp<volScalarField>> vDot() const;
+        //virtual Pair<tmp<volScalarField>> vDot() const;
 
         //- Correct the HardtWondra phaseChange model
         virtual void correct();

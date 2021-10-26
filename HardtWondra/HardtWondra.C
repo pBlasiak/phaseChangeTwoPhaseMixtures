@@ -70,8 +70,9 @@ HardtWondra
     gamma_
     (
         "gamma",
-        dimless, optionalSubDict(type() + "Coeffs")
-    ),
+        //dimless, optionalSubDict(type() + "Coeffs")
+        dimless, phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")
+	),
     HTC_
     (
         "heatResistance",
@@ -152,7 +153,7 @@ HardtWondra
 
     spread_
     (
-        optionalSubDict(type() + "Coeffs").get<scalar>("spread")
+        phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").get<scalar>("spread")
     )
 {
     correct();
@@ -237,30 +238,30 @@ mDotT() const
 }
 
 
-Foam::tmp<Foam::fvScalarMatrix>
-Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
-TSource() const
-{
-    //const volScalarField& T = U.mesh().lookupObject<volScalarField>("T");
-
-    auto tTSource = tmp<fvScalarMatrix>::New(T_, dimEnergy/dimTime);
-    auto& TSource = tTSource.ref();
-
-    //const twoPhaseMixtureEThermo& thermo =
-    //    refCast<const twoPhaseMixtureEThermo>
-    //    (
-    //        U.mesh().lookupObject<basicThermo>(basicThermo::dictName)
-    //    );
-
-    //const dimensionedScalar& TSat = thermo.TSat();
-
-    // interface heat resistance
-    volScalarField IHRcoeff(interfaceArea_*R_);
-
-    TSource = fvm::Sp(IHRcoeff, T_) - IHRcoeff*TSat_;
-
-    return tTSource;
-}
+//Foam::tmp<Foam::fvScalarMatrix>
+//Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
+//TSource() const
+//{
+//    //const volScalarField& T = U.mesh().lookupObject<volScalarField>("T");
+//
+//    auto tTSource = tmp<fvScalarMatrix>::New(T_, dimEnergy/dimTime);
+//    auto& TSource = tTSource.ref();
+//
+//    //const twoPhaseMixtureEThermo& thermo =
+//    //    refCast<const twoPhaseMixtureEThermo>
+//    //    (
+//    //        U.mesh().lookupObject<basicThermo>(basicThermo::dictName)
+//    //    );
+//
+//    //const dimensionedScalar& TSat = thermo.TSat();
+//
+//    // interface heat resistance
+//    volScalarField IHRcoeff(interfaceArea_*R_);
+//
+//    TSource = fvm::Sp(IHRcoeff, T_) - IHRcoeff*TSat_;
+//
+//    return tTSource;
+//}
 
 
 void Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
