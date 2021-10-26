@@ -69,8 +69,11 @@ class HardtWondra
 {
     // Private Data
 
-        //- Heat transfer coefficient [1/s/K]
-        dimensionedScalar R_;
+    	dimensionedScalar gamma_;
+
+        //- Heat transfer coefficient
+		//  without T_sat^3/2
+        dimensionedScalar HTC_;
 
         //- Interface area
         volScalarField interfaceArea_;
@@ -127,7 +130,13 @@ public:
         virtual Pair<tmp<volScalarField>> mDotAlphal() const;
 
         //- Return the mass condensation and vaporisation rates as coefficients
-        virtual Pair<tmp<volScalarField>> mDot() const;
+        //virtual Pair<tmp<volScalarField>> mDot() const;
+        virtual Pair<tmp<volScalarField>> mDotP() const;
+
+        //- Return the mass condensation (-) and vaporisation (+) rates as coefficients
+        //  to multiply by (T - TSat) in TEqn
+		//  units are kg/(m3 s K)
+        virtual Pair<tmp<volScalarField> > mDotT() const;
 
         //- Return the mass condensation and vaporisation rates as a
         //  coefficient to multiply (Tsat - T) for the condensation rate
@@ -138,7 +147,7 @@ public:
         virtual tmp<fvScalarMatrix> TSource() const;
 
         //- Volumetric source for alpha (used by alphaEq)
-        virtual Pair<tmp<volScalarField>> vDotAlphal() const;
+        //virtual Pair<tmp<volScalarField>> vDotAlphal() const;
 
         //- Return the volumetric condensation and vaporisation rates as
         //  coefficients (used by p_rghEq)

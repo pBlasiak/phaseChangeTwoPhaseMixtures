@@ -67,10 +67,17 @@ HardtWondra
 :
     //temperaturePhaseChangeTwoPhaseMixture(mixture, mesh),
     phaseChangeTwoPhaseMixture(typeName, U, phi),
-    R_
+    gamma_
     (
-        "R",
-        dimPower/dimArea/dimTemperature, optionalSubDict(type() + "Coeffs")
+        "gamma",
+        dimless, optionalSubDict(type() + "Coeffs")
+    ),
+    HTC_
+    (
+        "heatResistance",
+		(2.0*gamma_/(2.0 - gamma_)/sqrt(2.0*M_PI*R_)*hEvap_*hEvap_*rho2())
+		//heatResistance_( (2-gamma_)/(2*gamma_)*sqrt(2.0*M_PI*R_)/hEvap_/hEvap_/rho2() )
+        //dimPower/dimArea/dimTemperature, optionalSubDict(type() + "Coeffs")
     ),
 
     interfaceArea_
@@ -154,18 +161,18 @@ HardtWondra
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
-Foam::Pair<Foam::tmp<Foam::volScalarField>>
-Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
-vDotAlphal() const
-{
-    dimensionedScalar alphalCoeff(1.0/rho1());
-
-    return Pair<tmp<volScalarField>>
-    (
-        (alphalCoeff*mDotc_)/(alpha2() + SMALL),
-       -(alphalCoeff*mDote_)/(alpha1() + SMALL)
-    );
-}
+//Foam::Pair<Foam::tmp<Foam::volScalarField>>
+//Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
+//vDotAlphal() const
+//{
+//    dimensionedScalar alphalCoeff(1.0/rho1());
+//
+//    return Pair<tmp<volScalarField>>
+//    (
+//        (alphalCoeff*mDotc_)/(alpha2() + SMALL),
+//       -(alphalCoeff*mDote_)/(alpha1() + SMALL)
+//    );
+//}
 
 
 Foam::Pair<Foam::tmp<Foam::volScalarField>>
@@ -192,19 +199,23 @@ mDotAlphal() const
 
 Foam::Pair<Foam::tmp<Foam::volScalarField>>
 Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
-mDot() const
+//mDot() const
+mDotP() const
 {
     return Pair<tmp<volScalarField>>
     (
-        tmp<volScalarField>(mDotc_),
-        tmp<volScalarField>(mDote_)
+        //tmp<volScalarField>(mDotc_),
+        //tmp<volScalarField>(mDote_)
+        tmp<volScalarField>(mDotcSpread_),
+        tmp<volScalarField>(-mDoteSpread_)
     );
 }
 
 
 Foam::Pair<Foam::tmp<Foam::volScalarField>>
 Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
-mDotDeltaT() const
+//mDotDeltaT() const
+mDotT() const
 {
    //const twoPhaseMixtureEThermo& thermo =
    //     refCast<const twoPhaseMixtureEThermo>
@@ -216,7 +227,7 @@ mDotDeltaT() const
 
     //const dimensionedScalar& TSat = thermo.TSat();
 
-    Pair<tmp<volScalarField>> mDotce(mDot());
+    //Pair<tmp<volScalarField>> mDotce(mDot());
 
     return Pair<tmp<volScalarField>>
     (
@@ -272,9 +283,12 @@ correct()
 
     //dimensionedScalar L = mixture_.Hf2() - mixture_.Hf1();
 
-    // interface heat resistance
-    mDotc_ = interfaceArea_*R_*max(TSat_ - T_, T0)/hEvap_;
-    mDote_ = interfaceArea_*R_*(T_ - TSat_)/hEvap_;
+    // interface mass fluxes
+	// q = HTC*(T-TSat)
+	// M = q/hEvap
+	// m = M*interfaceArea
+    mDotc_ = interfaceArea_*HTC_*max(TSat_ - T_, T0)/hEvap_/sqrt(pow(TSat_,3.0));
+    mDote_ = interfaceArea_*HTC_*max(T_ - TSat_, T0)/hEvap_/sqrt(pow(TSat_,3.0));
 
     forAll(mDotc_, celli)
     {
@@ -386,19 +400,19 @@ updateInterface()
 }
 
 
-Foam::Pair<Foam::tmp<Foam::volScalarField>>
-Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
-vDot() const
-{
-
-    dimensionedScalar pCoeff(1.0/rho1() - 1.0/rho2());
-
-    return Pair<tmp<volScalarField>>
-    (
-        pCoeff*mDotcSpread_,
-       -pCoeff*mDoteSpread_
-    );
-}
+//Foam::Pair<Foam::tmp<Foam::volScalarField>>
+//Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
+//vDot() const
+//{
+//
+//    dimensionedScalar pCoeff(1.0/rho1() - 1.0/rho2());
+//
+//    return Pair<tmp<volScalarField>>
+//    (
+//        pCoeff*mDotcSpread_,
+//       -pCoeff*mDoteSpread_
+//    );
+//}
 
 
 bool Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
@@ -407,7 +421,8 @@ read()
     //if (temperaturePhaseChangeTwoPhaseMixture::read())
     if (phaseChangeTwoPhaseMixture::read())
     {
-        optionalSubDict(type() + "Coeffs").readEntry("R", R_);
+        optionalSubDict(type() + "Coeffs").readEntry("gamma", gamma_);
+        optionalSubDict(type() + "Coeffs").readEntry("HTC", HTC_);
         optionalSubDict(type() + "Coeffs").readEntry("spread", spread_);
 
         return true;
