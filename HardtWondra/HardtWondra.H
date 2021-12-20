@@ -69,6 +69,10 @@ class HardtWondra
 {
     // Private Data
 
+    	Switch cond_;
+
+    	Switch evap_;
+
     	dimensionedScalar gamma_;
 
         //- Heat transfer coefficient

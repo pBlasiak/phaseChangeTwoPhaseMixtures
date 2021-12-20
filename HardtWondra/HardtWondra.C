@@ -67,6 +67,8 @@ HardtWondra
 :
     //temperaturePhaseChangeTwoPhaseMixture(mixture, mesh),
     phaseChangeTwoPhaseMixture(typeName, U, phi),
+    cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
+    evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
     gamma_
     (
         "gamma",
@@ -75,7 +77,7 @@ HardtWondra
 	),
     HTC_
     (
-        "heatResistance",
+        "heatTransferCoeff",
 		(2.0*gamma_/(2.0 - gamma_)/sqrt(2.0*M_PI*R_)*hEvap_*hEvap_*rho2())
 		//heatResistance_( (2-gamma_)/(2*gamma_)*sqrt(2.0*M_PI*R_)/hEvap_/hEvap_/rho2() )
         //dimPower/dimArea/dimTemperature, optionalSubDict(type() + "Coeffs")
@@ -190,10 +192,17 @@ mDotAlphal() const
         min(max(alpha2(), scalar(0)), scalar(1))
     );
 
-    return Pair<tmp<volScalarField>>
-    (
-        (mDotc_/(limitedAlpha2 + SMALL)),
-       -(mDote_/(limitedAlpha1 + SMALL))
+    //return Pair<tmp<volScalarField>>
+    //(
+    //  //  (mDotc_/(limitedAlpha2 + SMALL)),
+    //  // -(mDote_/(limitedAlpha1 + SMALL))
+    //    (mDotc_*scalar(1)),
+    //   -(mDote_*scalar(1))
+    //);
+	return Pair<tmp<volScalarField>>
+	(
+		tmp<volScalarField>(mCondNoAlphal_),
+		tmp<volScalarField>(mEvapNoAlphal_)
     );
 }
 
@@ -207,8 +216,10 @@ mDotP() const
     (
         //tmp<volScalarField>(mDotc_),
         //tmp<volScalarField>(mDote_)
-        tmp<volScalarField>(mDotcSpread_),
-        tmp<volScalarField>(-mDoteSpread_)
+        //tmp<volScalarField>(mDotcSpread_),
+        //tmp<volScalarField>(-mDoteSpread_)
+        mDotcSpread_*pos(p_-pSat_)/max(p_-pSat_,1E-6*pSat_),
+	    -mDoteSpread_*neg(p_-pSat_)/max(pSat_-p_,1E-6*pSat_)
     );
 }
 
@@ -230,11 +241,16 @@ mDotT() const
 
     //Pair<tmp<volScalarField>> mDotce(mDot());
 
-    return Pair<tmp<volScalarField>>
-    (
-        mDotc_*pos(TSat_ - T_.oldTime())/(TSat_ - T_.oldTime()),
-       -mDote_*pos(T_.oldTime() - TSat_)/(T_.oldTime() - TSat_)
-    );
+    //return Pair<tmp<volScalarField>>
+    //(
+    //    mDotc_*pos(TSat_ - T_.oldTime())/(TSat_ - T_.oldTime()),
+    //   -mDote_*pos(T_.oldTime() - TSat_)/(T_.oldTime() - TSat_)
+    //);
+	return Pair<tmp<volScalarField> >
+	(
+	    tmp<volScalarField>(mCondNoTmTSat_),
+	    tmp<volScalarField>(mEvapNoTmTSat_)
+	);
 }
 
 
@@ -267,6 +283,8 @@ mDotT() const
 void Foam::phaseChangeTwoPhaseMixtures::HardtWondra::
 correct()
 {
+	phaseChangeTwoPhaseMixture::correct();
+
     // Update Interface
     updateInterface();
 
@@ -281,6 +299,7 @@ correct()
 
     //const dimensionedScalar& TSat = thermo.TSat();
     const dimensionedScalar T0(dimTemperature, Zero);
+    volScalarField limitedAlpha1 = min(max(alpha1(), scalar(0)), scalar(1));
 
     //dimensionedScalar L = mixture_.Hf2() - mixture_.Hf1();
 
@@ -288,8 +307,22 @@ correct()
 	// q = HTC*(T-TSat)
 	// M = q/hEvap
 	// m = M*interfaceArea
-    mDotc_ = interfaceArea_*HTC_*max(TSat_ - T_, T0)/hEvap_/sqrt(pow(TSat_,3.0));
-    mDote_ = interfaceArea_*HTC_*max(T_ - TSat_, T0)/hEvap_/sqrt(pow(TSat_,3.0));
+	if (cond_)
+	{
+		//mDotc_ = interfaceArea_*HTC_*max(TSat_ - T_, T0)/hEvap_/sqrt(pow(TSat_,3.0));
+		mCondNoAlphal_ = interfaceArea_*HTC_*max(TSat_ - T_, T0)/hEvap_/sqrt(pow(TSat_,3.0));
+		mCondAlphal_   = mCondNoAlphal_*(1-limitedAlpha1);
+		mDotc_ = mCondAlphal_;
+		mCondNoTmTSat_ = -neg(T_ - TSat_)*interfaceArea_*HTC_/hEvap_/sqrt(pow(TSat_,3.0));
+	}
+	if (evap_)
+	{
+		//mDote_ = interfaceArea_*HTC_*max(T_ - TSat_, T0)/hEvap_/sqrt(pow(TSat_,3.0));
+		mEvapNoAlphal_ = -interfaceArea_*HTC_*max(T_ - TSat_, T0)/hEvap_/sqrt(pow(TSat_,3.0));
+		mEvapAlphal_   = mEvapNoAlphal_*limitedAlpha1;
+		mDote_ = mEvapAlphal_;
+		mEvapNoTmTSat_ = pos(T_ - TSat_)*interfaceArea_*HTC_/hEvap_/sqrt(pow(TSat_,3.0));
+	}
 
     forAll(mDotc_, celli)
     {
@@ -422,9 +455,12 @@ read()
     //if (temperaturePhaseChangeTwoPhaseMixture::read())
     if (phaseChangeTwoPhaseMixture::read())
     {
+		// nie wiem czy tu nie czyta teraz z transportProperties
         optionalSubDict(type() + "Coeffs").readEntry("gamma", gamma_);
         optionalSubDict(type() + "Coeffs").readEntry("HTC", HTC_);
         optionalSubDict(type() + "Coeffs").readEntry("spread", spread_);
+        optionalSubDict(type() + "Coeffs").readEntry("condensation", cond_);
+        optionalSubDict(type() + "Coeffs").readEntry("evaporation", evap_);
 
         return true;
     }
