@@ -36,6 +36,7 @@ SourceFiles
 #define phaseChangeTwoPhaseMixture_H
 
 #include "thermalIncompressibleTwoPhaseMixture.H"
+//#include "HardtWondra.H"
 #include "typeInfo.H"
 #include "runTimeSelectionTables.H"
 #include "volFields.H"
@@ -56,13 +57,61 @@ class phaseChangeTwoPhaseMixture
 :
     public thermalIncompressibleTwoPhaseMixture
 {
-
 protected:
 
     // Protected data
 
         dictionary phaseChangeTwoPhaseMixtureCoeffs_;
 
+private:
+
+    // Private data
+	
+	    //- Hardt-Wondra algorithm activation
+		//  default is true
+		Switch HW_;
+
+        //- Spread for mass source
+		//  default is 1e-3
+        scalar cutoff_;
+
+		//- Flag for the magGradLimitedAlphal
+		Switch magGradLimitedAlphalCalculated_;
+
+		//- Flag for the magGradLimitedAlphav
+		Switch magGradLimitedAlphavCalculated_;
+
+    // Private Member Functions
+
+        //- Disallow copy construct
+        phaseChangeTwoPhaseMixture(const phaseChangeTwoPhaseMixture&);
+
+        //- Disallow default bitwise assignment
+        void operator=(const phaseChangeTwoPhaseMixture&);
+
+
+protected:
+
+    // Protected data
+
+        //dictionary phaseChangeTwoPhaseMixtureCoeffs_;
+
+    	Switch cond_;
+
+    	Switch evap_;
+
+		//- Limited liquid void fraction between 0 and 1 
+		volScalarField limitedAlphal_;
+
+		//- Limited vapor void fraction between 0 and 1 
+		volScalarField limitedAlphav_;
+
+		//- Gradient magnitude of limited alphal
+		volScalarField magGradLimitedAlphal_;
+
+		//- Gradient magnitude of limited alphav
+		volScalarField magGradLimitedAlphav_;
+		
 		//- Condensation mass flux, kg/s (+)
 		volScalarField mCond_;
 		
@@ -119,19 +168,12 @@ protected:
 		Switch printPhaseChange_;
 		
 
-    // Private Member Functions
-
-        //- Disallow copy construct
-        phaseChangeTwoPhaseMixture(const phaseChangeTwoPhaseMixture&);
-
-        //- Disallow default bitwise assignment
-        void operator=(const phaseChangeTwoPhaseMixture&);
-
-//protected:
-
 		//- Calculates local saturation temperature field based on pressure
 		//  using simplified Clausius-Clapeyron equation 
 		void calcTSatLocal();
+
+		//- Calculates magnitude of gradient of limited alphal
+		void calcMagGradLimitedAlpha();
 
 public:
 
@@ -181,6 +223,9 @@ public:
 
 
     // Member Functions
+	
+	    //- Hardt-Wondra algorithm
+		void HardtWondra();
 
         //- Return const-access to the condensation mass flux
         const volScalarField& mCond() const

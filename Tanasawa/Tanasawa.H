@@ -64,9 +64,6 @@ class Tanasawa
 {
     // Private data
 
-    	Switch cond_;
-
-    	Switch evap_;
 
     	dimensionedScalar gamma_;
 
@@ -74,7 +71,7 @@ class Tanasawa
 		
     // Private member functions
 
-        volScalarField calcGradAlphal() const;
+        //volScalarField calcGradAlphal() const;
 
 public:
 

@@ -24,6 +24,20 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "phaseChangeTwoPhaseMixture.H"
+#include "fvc.H"
+#include "fvm.H"
+#include "mathematicalConstants.H"
+#include "addToRunTimeSelectionTable.H"
+
+#include "volFields.H"
+//#include "FaceCellWave.H"
+//#include "smoothData.H"
+//#include "sweepData.H"
+//#include "fvMatrices.H"
+//#include "fvcVolumeIntegrate.H"
+//#include "fvmLaplacian.H"
+//#include "fvmSup.H"
+#include "zeroGradientFvPatchField.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -58,6 +72,19 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
             )
 	    )
 	),
+	//HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HW", true)),
+	HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HW", true)),
+	cutoff_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("cutoff", 1e-3)),
+	magGradLimitedAlphalCalculated_(false),
+	magGradLimitedAlphavCalculated_(false),
+    //cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
+    //evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
+    cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_),
+    evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_),
+	limitedAlphal_(min(max(alpha1(), scalar(0)), scalar(1))),
+	limitedAlphav_(min(max(alpha2(), scalar(0)), scalar(1))),
+	magGradLimitedAlphal_(mag(fvc::grad(limitedAlphal_))),
+	magGradLimitedAlphav_(mag(fvc::grad(limitedAlphav_))),
     mCond_
     (
         IOobject
@@ -216,7 +243,6 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	),
 	p_(U.db().lookupObject<volScalarField>("p")),
 	T_(U.db().lookupObject<volScalarField>("T")),
-    //TSatG_("TSatGlobal", dimTemperature, phaseChangeTwoPhaseMixtureCoeffs_.lookup("TSatGlobal")),
     TSatG_("TSatGlobal", dimTemperature, phaseChangeTwoPhaseMixtureCoeffs_),
     TSat_
     (
@@ -231,11 +257,8 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
         U.mesh(),
 		TSatG_
     ),
-    //pSat_("pSat", dimPressure, phaseChangeTwoPhaseMixtureCoeffs_.lookup("pSat")),
     pSat_("pSat", dimPressure, phaseChangeTwoPhaseMixtureCoeffs_),
-    //hEvap_("hEvap", dimEnergy/dimMass, phaseChangeTwoPhaseMixtureCoeffs_.lookup("hEvap")),
     hEvap_("hEvap", dimEnergy/dimMass, phaseChangeTwoPhaseMixtureCoeffs_),
-    //R_("R", dimGasConstant, phaseChangeTwoPhaseMixtureCoeffs_.lookup("R")),
     R_("R", dimGasConstant, phaseChangeTwoPhaseMixtureCoeffs_),
     TSatLocalPressure_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("TSatLocalPressure"))),
 	printPhaseChange_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("printPhaseChange")))
@@ -246,10 +269,247 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	Info<< "R = "			  			<< R_ << endl;
 	Info<< "TSatLocalPressure = "       << TSatLocalPressure_ << endl;
 	Info<< "printPhaseChange = "        << printPhaseChange_ << endl;
+
+	Info<< "Hardt-Wondra algorithm is: " << HW_ << endl;
+	Info<< "Cutoff is set as: "          << cutoff_ << endl;
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
+
+void Foam::phaseChangeTwoPhaseMixture::calcMagGradLimitedAlpha()
+{
+	if (!magGradLimitedAlphalCalculated_ || !magGradLimitedAlphavCalculated_)
+	{
+		if (cond_)
+		{
+			limitedAlphal_ = min(max(alpha1(), scalar(0)), scalar(1));
+			magGradLimitedAlphal_ = mag(fvc::grad(limitedAlphal_));
+			magGradLimitedAlphalCalculated_ = true;
+		}
+		if (evap_)
+		{
+			limitedAlphav_ = min(max(alpha2(), scalar(0)), scalar(1));
+			magGradLimitedAlphav_ = mag(fvc::grad(limitedAlphav_));
+			magGradLimitedAlphavCalculated_ = true;
+		}
+	}
+	else
+	{
+		return;
+	}
+}
+
+void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
+{
+	if(!HW_)
+	{
+		magGradLimitedAlphalCalculated_ = false;
+		magGradLimitedAlphavCalculated_ = false;
+		return;
+	}
+	else
+	{
+		calcMagGradLimitedAlpha();
+
+		//- Smearing of source term field
+		dimensionedScalar DPsi
+		(
+		    "DPsi",
+		    dimArea,
+		    cutoff_/sqr(gAverage(T_.mesh().nonOrthDeltaCoeffs()))
+		);
+
+		if (cond_)
+		{
+			dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphav_);
+			dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate(limitedAlphav_*magGradLimitedAlphav_);
+			
+			dimensionedScalar Ncond ("Ncond", dimensionSet(0,0,0,0,0,0,0), 2.0);
+			if (intAlphaPsi0Tild.value() > 1e-99)
+			{
+				Ncond = intPsi0Tild/intAlphaPsi0Tild;
+			}
+			mCondNoAlphal_ *= Ncond;
+			mCondNoTmTSat_ *= Ncond;
+
+			dimensionedScalar intPsi0l = fvc::domainIntegrate(mCondAlphal_);
+
+			const fvMesh& mesh = T_.mesh();
+			volScalarField psil
+			(
+			    IOobject
+			    (
+			        "psil",
+			        mesh.time().timeName(),
+			        mesh,
+			        IOobject::NO_READ,
+			        IOobject::NO_WRITE
+			    ),
+			    mesh,
+			    dimensionedScalar(mCondAlphal_.dimensions(), Zero),
+			    zeroGradientFvPatchField<scalar>::typeName
+			);
+			
+			fvScalarMatrix psilEqn
+			(
+				fvm::Sp(scalar(1),psil) - fvm::laplacian(DPsi,psil) == mCondAlphal_
+			);
+			
+			psilEqn.solve();
+			
+			//- Cut cells with cutoff < alpha1 < 1-cutoff and rescale remaining source term field
+			dimensionedScalar intPsiLiquidCondensation ("intPsiLiquidCondensation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+			dimensionedScalar intPsiVaporCondensation ("intPsiVaporCondensation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+
+
+			forAll(mesh.C(),iCell)
+			{
+				if (limitedAlphav_[iCell] < cutoff_)
+				{
+					intPsiVaporCondensation.value() += (1.0-limitedAlphav_[iCell])*psil[iCell]*mesh.V()[iCell];
+				}
+				else if (limitedAlphav_[iCell] > 1.0-cutoff_)
+				{
+					intPsiLiquidCondensation.value() += limitedAlphav_[iCell]*psil[iCell]*mesh.V()[iCell];
+				}
+			}
+			
+			//- Calculate Nl and Nv
+			dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
+			dimensionedScalar Nv ("Nv", dimensionSet(0,0,0,0,0,0,0), 2.0);
+			
+			reduce(intPsiLiquidCondensation.value(),sumOp<scalar>());
+			reduce(intPsiVaporCondensation.value(),sumOp<scalar>());
+			
+			if (intPsiLiquidCondensation.value() > 1e-99)
+			{
+			    Nl = intPsi0l/intPsiLiquidCondensation;
+			}
+			if (intPsiVaporCondensation.value() > 1e-99)
+			{
+			    Nv = intPsi0l/intPsiVaporCondensation;
+			}
+			
+			        
+			//- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
+			forAll(mesh.C(),iCell)
+			{
+				if (limitedAlphav_[iCell] < cutoff_)
+				{
+					mCondAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphav_[iCell])*psil[iCell];
+				}
+				else if (limitedAlphav_[iCell] > 1.0-cutoff_)
+				{
+					mCondAlphal_[iCell] = Nl.value()*limitedAlphav_[iCell]*psil[iCell];
+				}
+				else
+				{
+					mCondAlphal_[iCell] = 0.0;
+				}
+			}
+			
+			//- Evaporation source term in energy equation
+			//hESource = -N*alpha1*psi0Tild/Rph;
+		}
+
+		if (evap_)
+		{
+			dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphal_);
+			dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate(limitedAlphal_*magGradLimitedAlphal_);
+			
+			dimensionedScalar Nevap ("Nevap", dimensionSet(0,0,0,0,0,0,0), 2.0);
+			if (intAlphaPsi0Tild.value() > 1e-99)
+			{
+				Nevap = intPsi0Tild/intAlphaPsi0Tild;
+			}
+			mEvapNoAlphal_ *= Nevap;
+			mEvapNoTmTSat_ *= Nevap;
+
+			dimensionedScalar intPsi0v = fvc::domainIntegrate(mEvapAlphal_);
+
+			const fvMesh& mesh = T_.mesh();
+			volScalarField psiv
+			(
+			    IOobject
+			    (
+			        "psiv",
+			        mesh.time().timeName(),
+			        mesh,
+			        IOobject::NO_READ,
+			        IOobject::NO_WRITE
+			    ),
+			    mesh,
+			    dimensionedScalar(mEvapAlphal_.dimensions(), Zero),
+			    zeroGradientFvPatchField<scalar>::typeName
+			);
+			
+			fvScalarMatrix psivEqn
+			(
+				fvm::Sp(scalar(1),psiv) - fvm::laplacian(DPsi,psiv) == mEvapAlphal_
+			);
+			
+			psivEqn.solve();
+			
+			//- Cut cells with cutoff < alpha1 < 1-cutoff and rescale remaining source term field
+			dimensionedScalar intPsiLiquidEvaporation ("intPsiLiquidEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+			dimensionedScalar intPsiVaporEvaporation ("intPsiVaporEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+
+
+			forAll(mesh.C(),iCell)
+			{
+				if (limitedAlphal_[iCell] < cutoff_)
+				{
+					intPsiVaporEvaporation.value() += (1.0-limitedAlphal_[iCell])*psiv[iCell]*mesh.V()[iCell];
+				}
+				else if (limitedAlphal_[iCell] > 1.0-cutoff_)
+				{
+					intPsiLiquidEvaporation.value() += limitedAlphal_[iCell]*psiv[iCell]*mesh.V()[iCell];
+				}
+			}
+			
+			//- Calculate Nl and Nv
+			dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
+			dimensionedScalar Nv ("Nv", dimensionSet(0,0,0,0,0,0,0), 2.0);
+			
+			reduce(intPsiLiquidEvaporation.value(),sumOp<scalar>());
+			reduce(intPsiVaporEvaporation.value(),sumOp<scalar>());
+			
+			if (intPsiLiquidEvaporation.value() > 1e-99)
+			{
+			    Nl = intPsi0v/intPsiLiquidEvaporation;
+			}
+			if (intPsiVaporEvaporation.value() > 1e-99)
+			{
+			    Nv = intPsi0v/intPsiVaporEvaporation;
+			}
+			
+			        
+			//- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
+			forAll(mesh.C(),iCell)
+			{
+				if (limitedAlphal_[iCell] < cutoff_)
+				{
+					mEvapAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psiv[iCell];
+				}
+				else if (limitedAlphal_[iCell] > 1.0-cutoff_)
+				{
+					mEvapAlphal_[iCell] = Nl.value()*limitedAlphal_[iCell]*psiv[iCell];
+				}
+				else
+				{
+					mEvapAlphal_[iCell] = 0.0;
+				}
+			}
+			
+			//- Evaporation source term in energy equation
+			//hESource = -N*alpha1*psi0Tild/Rph;
+		}
+
+		magGradLimitedAlphalCalculated_ = false;
+		magGradLimitedAlphavCalculated_ = false;
+	}
+}
 
 void Foam::phaseChangeTwoPhaseMixture::calcTSatLocal() 
 {
@@ -307,7 +567,7 @@ void Foam::phaseChangeTwoPhaseMixture::correct()
 	thermalIncompressibleTwoPhaseMixture::correct();
 	calcTSatLocal();
 
-    volScalarField limitedAlpha1 = min(max(alpha1(), scalar(0)), scalar(1));
+
     const fvMesh& mesh = alpha1().mesh();
 
 	if (printPhaseChange_)
