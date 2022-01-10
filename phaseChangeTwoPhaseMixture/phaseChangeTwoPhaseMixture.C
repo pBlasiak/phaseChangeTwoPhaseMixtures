@@ -72,19 +72,15 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
             )
 	    )
 	),
-	//HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HW", true)),
 	HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HW", true)),
 	cutoff_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("cutoff", 1e-3)),
 	magGradLimitedAlphalCalculated_(false),
-	magGradLimitedAlphavCalculated_(false),
     //cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
     //evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
     cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_),
     evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_),
 	limitedAlphal_(min(max(alpha1(), scalar(0)), scalar(1))),
-	limitedAlphav_(min(max(alpha2(), scalar(0)), scalar(1))),
 	magGradLimitedAlphal_(mag(fvc::grad(limitedAlphal_))),
-	magGradLimitedAlphav_(mag(fvc::grad(limitedAlphav_))),
     mCond_
     (
         IOobject
@@ -279,20 +275,11 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 
 void Foam::phaseChangeTwoPhaseMixture::calcMagGradLimitedAlpha()
 {
-	if (!magGradLimitedAlphalCalculated_ || !magGradLimitedAlphavCalculated_)
+	if (!magGradLimitedAlphalCalculated_)
 	{
-		if (cond_)
-		{
-			limitedAlphal_ = min(max(alpha1(), scalar(0)), scalar(1));
-			magGradLimitedAlphal_ = mag(fvc::grad(limitedAlphal_));
-			magGradLimitedAlphalCalculated_ = true;
-		}
-		if (evap_)
-		{
-			limitedAlphav_ = min(max(alpha2(), scalar(0)), scalar(1));
-			magGradLimitedAlphav_ = mag(fvc::grad(limitedAlphav_));
-			magGradLimitedAlphavCalculated_ = true;
-		}
+		limitedAlphal_ = min(max(alpha1(), scalar(0)), scalar(1));
+		magGradLimitedAlphal_ = mag(fvc::grad(limitedAlphal_));
+		magGradLimitedAlphalCalculated_ = true;
 	}
 	else
 	{
@@ -305,7 +292,6 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 	if(!HW_)
 	{
 		magGradLimitedAlphalCalculated_ = false;
-		magGradLimitedAlphavCalculated_ = false;
 		return;
 	}
 	else
@@ -322,8 +308,8 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 
 		if (cond_)
 		{
-			dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphav_);
-			dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate(limitedAlphav_*magGradLimitedAlphav_);
+			dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphal_);
+			dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate((limitedAlphal_)*magGradLimitedAlphal_);
 			
 			dimensionedScalar Ncond ("Ncond", dimensionSet(0,0,0,0,0,0,0), 2.0);
 			if (intAlphaPsi0Tild.value() > 1e-99)
@@ -365,13 +351,13 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 
 			forAll(mesh.C(),iCell)
 			{
-				if (limitedAlphav_[iCell] < cutoff_)
+				if ((limitedAlphal_[iCell]) < cutoff_)
 				{
-					intPsiVaporCondensation.value() += (1.0-limitedAlphav_[iCell])*psil[iCell]*mesh.V()[iCell];
+					intPsiVaporCondensation.value() += (1.0-limitedAlphal_[iCell])*psil[iCell]*mesh.V()[iCell];
 				}
-				else if (limitedAlphav_[iCell] > 1.0-cutoff_)
+				else if ((limitedAlphal_[iCell]) > 1.0-cutoff_)
 				{
-					intPsiLiquidCondensation.value() += limitedAlphav_[iCell]*psil[iCell]*mesh.V()[iCell];
+					intPsiLiquidCondensation.value() += (limitedAlphal_[iCell])*psil[iCell]*mesh.V()[iCell];
 				}
 			}
 			
@@ -395,13 +381,13 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 			//- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
 			forAll(mesh.C(),iCell)
 			{
-				if (limitedAlphav_[iCell] < cutoff_)
+				if (limitedAlphal_[iCell] < cutoff_)
 				{
-					mCondAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphav_[iCell])*psil[iCell];
+					mCondAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psil[iCell];
 				}
-				else if (limitedAlphav_[iCell] > 1.0-cutoff_)
+				else if (limitedAlphal_[iCell] > 1.0-cutoff_)
 				{
-					mCondAlphal_[iCell] = Nl.value()*limitedAlphav_[iCell]*psil[iCell];
+					mCondAlphal_[iCell] = Nl.value()*(limitedAlphal_[iCell])*psil[iCell];
 				}
 				else
 				{
@@ -507,7 +493,6 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 		}
 
 		magGradLimitedAlphalCalculated_ = false;
-		magGradLimitedAlphavCalculated_ = false;
 	}
 }
 

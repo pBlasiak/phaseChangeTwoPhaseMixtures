@@ -78,9 +78,6 @@ private:
 		//- Flag for the magGradLimitedAlphal
 		Switch magGradLimitedAlphalCalculated_;
 
-		//- Flag for the magGradLimitedAlphav
-		Switch magGradLimitedAlphavCalculated_;
-
     // Private Member Functions
 
         //- Disallow copy construct
@@ -103,15 +100,9 @@ protected:
 		//- Limited liquid void fraction between 0 and 1 
 		volScalarField limitedAlphal_;
 
-		//- Limited vapor void fraction between 0 and 1 
-		volScalarField limitedAlphav_;
-
 		//- Gradient magnitude of limited alphal
 		volScalarField magGradLimitedAlphal_;
 
-		//- Gradient magnitude of limited alphav
-		volScalarField magGradLimitedAlphav_;
-		
 		//- Condensation mass flux, kg/s (+)
 		volScalarField mCond_;
 		
