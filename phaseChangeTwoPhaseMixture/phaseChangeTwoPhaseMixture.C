@@ -306,18 +306,19 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 		    cutoff_/sqr(gAverage(T_.mesh().nonOrthDeltaCoeffs()))
 		);
 
+		dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphal_);
+		dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate((limitedAlphal_)*magGradLimitedAlphal_);
+			
+		dimensionedScalar N("N", dimensionSet(0,0,0,0,0,0,0), 2.0);
+		if (intAlphaPsi0Tild.value() > 1e-99)
+		{
+			N = intPsi0Tild/intAlphaPsi0Tild;
+		}
+
 		if (cond_)
 		{
-			dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphal_);
-			dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate((limitedAlphal_)*magGradLimitedAlphal_);
-			
-			dimensionedScalar Ncond ("Ncond", dimensionSet(0,0,0,0,0,0,0), 2.0);
-			if (intAlphaPsi0Tild.value() > 1e-99)
-			{
-				Ncond = intPsi0Tild/intAlphaPsi0Tild;
-			}
-			mCondNoAlphal_ *= Ncond;
-			mCondNoTmTSat_ *= Ncond;
+			mCondNoAlphal_ *= N;
+			mCondNoTmTSat_ *= N;
 
 			dimensionedScalar intPsi0l = fvc::domainIntegrate(mCondAlphal_);
 
@@ -401,16 +402,8 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 
 		if (evap_)
 		{
-			dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphal_);
-			dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate(limitedAlphal_*magGradLimitedAlphal_);
-			
-			dimensionedScalar Nevap ("Nevap", dimensionSet(0,0,0,0,0,0,0), 2.0);
-			if (intAlphaPsi0Tild.value() > 1e-99)
-			{
-				Nevap = intPsi0Tild/intAlphaPsi0Tild;
-			}
-			mEvapNoAlphal_ *= Nevap;
-			mEvapNoTmTSat_ *= Nevap;
+			mEvapNoAlphal_ *= N;
+			mEvapNoTmTSat_ *= N;
 
 			dimensionedScalar intPsi0v = fvc::domainIntegrate(mEvapAlphal_);
 
