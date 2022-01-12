@@ -74,6 +74,7 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	),
 	HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HW", true)),
 	cutoff_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("cutoff", 1e-3)),
+	limitedAlphalCalculated_(false),
 	magGradLimitedAlphalCalculated_(false),
     //cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
     //evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
@@ -272,18 +273,22 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
+void Foam::phaseChangeTwoPhaseMixture::calcLimitedAlphal()
+{
+	if(!limitedAlphalCalculated_)
+	{
+		limitedAlphal_ = min(max(alpha1(), scalar(0)), scalar(1));
+		limitedAlphalCalculated_ = true;
+	}
+}
 
-void Foam::phaseChangeTwoPhaseMixture::calcMagGradLimitedAlpha()
+void Foam::phaseChangeTwoPhaseMixture::calcMagGradLimitedAlphal()
 {
 	if (!magGradLimitedAlphalCalculated_)
 	{
-		limitedAlphal_ = min(max(alpha1(), scalar(0)), scalar(1));
+		calcLimitedAlphal();
 		magGradLimitedAlphal_ = mag(fvc::grad(limitedAlphal_));
 		magGradLimitedAlphalCalculated_ = true;
-	}
-	else
-	{
-		return;
 	}
 }
 
@@ -296,7 +301,7 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 	}
 	else
 	{
-		calcMagGradLimitedAlpha();
+		calcMagGradLimitedAlphal();
 
 		//- Smearing of source term field
 		dimensionedScalar DPsi
@@ -486,6 +491,7 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 		}
 
 		magGradLimitedAlphalCalculated_ = false;
+		limitedAlphalCalculated_ = false;
 	}
 }
 

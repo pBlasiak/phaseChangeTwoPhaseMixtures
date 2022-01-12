@@ -99,11 +99,21 @@ public:
 		//  as a coefficient to multiply by (1 - alphal) for the condensation rate
         //  and a coefficient to multiply by alphal for the vaporisation rate
 		//  in alphaEqn. 
-		//  In this function the mass transfer model should be implemented
-		//  without alphal and (1 - alphal) terms included and stored in 
-		//  mCondNoAlphal_ and mEvapNoAlphal_ variables.
+		//  Units are kg/(m3 s)
+        virtual Pair<tmp<volScalarField> > mDotAlphal() const override;
+
+        //- Return the volumetric mass condensation (+) and vaporisation (-) rates as coefficients
+		//  to multiply in pEqn
 		//  units are kg/(m3 s)
-		//
+        virtual Pair<tmp<volScalarField> > mDotP() const override;
+
+        //- Return the mass condensation (-) and vaporisation (+) rates as coefficients
+        //  to multiply by (T - TSat) in TEqn
+		//  units are kg/(m3 s K)
+        virtual Pair<tmp<volScalarField> > mDotT() const override;
+
+        //- Correct the phaseChange model
+		//  In this function mass transfer model should be implemented.
 		//  Algorithm used in interBoilCondFoam: 
 		//  1) calculate volumetric mass fluxes in alphaEqn.H that are:
 		//     i) multiplied by (1-alphal) for condensation and by alphal for
@@ -116,23 +126,13 @@ public:
 		//     because they are calculate based on alphal and T from previous time-step
 		//  2) use these fluxes to calculate new alphal field in alphaEqn
 		//  3) if momentumPredictor is on in UEqn, calculate new U based on new alphal
-		//  4) in TEqn calculate new T based on new alphal but using the stored mass fluxes
+		//  4) in TEqn calculate new T based on new alphal but using the stored mass fluxes 
 		//  5) in pEqn calculate new p and U based on new alphal but using the stored mass fluxes
 		//  6) go to next PIMPLE iteration or time-step and start from 1)
-        virtual Pair<tmp<volScalarField> > mDotAlphal();
-
-        //- Return the volumetric mass condensation (+) and vaporisation (-) rates as coefficients
-		//  to multiply in pEqn
-		//  units are kg/(m3 s)
-        virtual Pair<tmp<volScalarField> > mDotP() const;
-
-        //- Return the mass condensation (-) and vaporisation (+) rates as coefficients
-        //  to multiply by (T - TSat) in TEqn
-		//  units are kg/(m3 s K)
-        virtual Pair<tmp<volScalarField> > mDotT() const;
+        virtual void correct() override;
 
         //- Read the transportProperties dictionary and update
-        virtual bool read();
+        virtual bool read() override;
 };
 
 

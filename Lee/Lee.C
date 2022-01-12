@@ -64,44 +64,49 @@ Foam::phaseChangeTwoPhaseMixtures::Lee::Lee
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
 Foam::phaseChangeTwoPhaseMixtures::Lee::mDotAlphal() 
 {
-    volScalarField limitedAlpha1 = min(max(alpha1(), scalar(0)), scalar(1));
-
-	// minus sign "-" to provide mc > 0  and mv < 0
-	mCondNoAlphal_ = -mcCoeff_*neg(T_ - TSat_)*(T_ - TSat_)/TSat_;
-	mEvapNoAlphal_ = -mvCoeff_*pos(T_ - TSat_)*(T_ - TSat_)/TSat_;
-
-	mCondAlphal_   = mCondNoAlphal_*(scalar(1) - limitedAlpha1);
-	mEvapAlphal_   = mEvapNoAlphal_*limitedAlpha1;
-
-	// plus sign to provide mc < 0  and mv > 0
-	mCondNoTmTSat_ = -mcCoeff_*neg(T_ - TSat_)*(scalar(1) - limitedAlpha1)/TSat_;
-	mEvapNoTmTSat_ =  mvCoeff_*pos(T_ - TSat_)*limitedAlpha1/TSat_;
-
-    return Pair<tmp<volScalarField> >
-    (
-	    mCondNoAlphal_*scalar(1),
-		mEvapNoAlphal_*scalar(1)
+	return Pair<tmp<volScalarField>>
+	(
+		tmp<volScalarField>(mCondNoAlphal_),
+		tmp<volScalarField>(mEvapNoAlphal_)
     );
 }
 
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
 Foam::phaseChangeTwoPhaseMixtures::Lee::mDotP() const
 {
-    return Pair<tmp<volScalarField> >
-    (
-	    mCondAlphal_*pos(p_-pSat_)/max(p_-pSat_,1E-6*pSat_),
+	return Pair<tmp<volScalarField> >
+	(
+        mCondAlphal_*pos(p_-pSat_)/max(p_-pSat_,1E-6*pSat_),
 	    mEvapAlphal_*neg(p_-pSat_)/max(pSat_-p_,1E-6*pSat_)
-    );
+	);
 }
 
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
 Foam::phaseChangeTwoPhaseMixtures::Lee::mDotT() const
 {
-    return Pair<tmp<volScalarField> >
-    (
-		mCondNoTmTSat_*scalar(1),
-		mEvapNoTmTSat_*scalar(1)
-    );
+	return Pair<tmp<volScalarField> >
+	(
+	    tmp<volScalarField>(mCondNoTmTSat_),
+	    tmp<volScalarField>(mEvapNoTmTSat_)
+	);
+}
+
+void Foam::phaseChangeTwoPhaseMixtures::Lee::correct()
+{
+	phaseChangeTwoPhaseMixture::correct();
+
+	calcLimitedAlphal()
+
+	// minus sign "-" to provide mc > 0  and mv < 0
+	mCondNoAlphal_ = -mcCoeff_*neg(T_ - TSat_)*(T_ - TSat_)/TSat_;
+	mEvapNoAlphal_ = -mvCoeff_*pos(T_ - TSat_)*(T_ - TSat_)/TSat_;
+
+	mCondAlphal_   = mCondNoAlphal_*(scalar(1) - limitedAlphal_);
+	mEvapAlphal_   = mEvapNoAlphal_*limitedAlphal_;
+
+	// plus sign to provide mc < 0  and mv > 0
+	mCondNoTmTSat_ = -mcCoeff_*neg(T_ - TSat_)*(scalar(1) - limitedAlphal_)/TSat_;
+	mEvapNoTmTSat_ =  mvCoeff_*pos(T_ - TSat_)*limitedAlphal_/TSat_;
 }
 
 bool Foam::phaseChangeTwoPhaseMixtures::Lee::read()

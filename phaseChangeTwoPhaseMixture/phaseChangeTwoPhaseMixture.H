@@ -74,6 +74,9 @@ private:
 		//  default is 1e-3
         scalar cutoff_;
 
+		//- Flag for the limited alphal calculation
+		Switch limitedAlphalCalculated_;
+
 		//- Flag for the magGradLimitedAlphal calculation
 		Switch magGradLimitedAlphalCalculated_;
 
@@ -162,8 +165,11 @@ protected:
 		//  using simplified Clausius-Clapeyron equation 
 		void calcTSatLocal();
 
+		//- Calculates limited alphal
+		void calcLimitedAlphal();
+
 		//- Calculates magnitude of gradient of limited alphal
-		void calcMagGradLimitedAlpha();
+		void calcMagGradLimitedAlphal();
 
 public:
 

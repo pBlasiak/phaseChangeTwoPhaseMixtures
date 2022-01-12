@@ -107,7 +107,7 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::correct()
 {
 	phaseChangeTwoPhaseMixture::correct();
 
-	calcMagGradLimitedAlpha();
+	calcMagGradLimitedAlphal();
 
 	// In Tanasawa model there is no alpha term
 	// probably it should be divided here by alphal and (1-alphal) but it
