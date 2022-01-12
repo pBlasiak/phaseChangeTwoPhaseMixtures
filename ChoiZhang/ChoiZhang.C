@@ -47,9 +47,9 @@ Foam::phaseChangeTwoPhaseMixtures::ChoiZhang::ChoiZhang
 :
     Lee(U, phi),
 
-    Ccvar_(Cc_)
-    //Cv_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
-
+    Ccvar_(Cc_),
+	totvmCond_(gSum(mCondAlphal_)),
+	totvmEvap_(gSum(mEvapAlphal_))
 {
 	Info<< "Phase change relaxation time factors for the " << type() << " model:\n" 
 		<< "Cc = " << Ccvar_ << endl
@@ -65,17 +65,15 @@ void Foam::phaseChangeTwoPhaseMixtures::ChoiZhang::correct()
 	phaseChangeTwoPhaseMixtures::Lee::correct();
 
 	//Ccvar_ = Cc_; // jak tego nie ma to Cc najpierw maleje do 1e-150 apotem rosnie do 1e+300
-	scalar totvmCond(0);
-	scalar totvmEvap(0);
-	totvmCond = gSum(mCondAlphal_);
-	totvmEvap = gSum(mEvapAlphal_);
+	totvmCond_ = gSum(mCondAlphal_);
+	totvmEvap_ = gSum(mEvapAlphal_);
 	
 	// model makes sense only if both condensation and evaporation appear
 	if (cond_ && evap_)
 	{
-		if (!(totvmCond == 0 && mag(totvmEvap) == 0))
-			Ccvar_.value() -= Ccvar_.value()*((totvmCond - mag(totvmEvap))
-		    	/max(totvmCond, mag(totvmEvap)));
+		if (!(totvmCond_.value() == 0 && mag(totvmEvap_).value() == 0))
+			Ccvar_ -= Ccvar_*((totvmCond_ - mag(totvmEvap_))
+		    	/max(totvmCond_, mag(totvmEvap_)));
 	}
 	else
 	{

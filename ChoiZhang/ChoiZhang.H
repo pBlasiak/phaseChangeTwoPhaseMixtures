@@ -68,6 +68,12 @@ protected:
 
         dimensionedScalar Ccvar_;
 
+		//- Total volumetric mass flux for condensation
+		dimensionedScalar totvmCond_;
+
+		//- Total volumetric mass flux for evaporation
+		dimensionedScalar totvmEvap_;
+
 
 public:
 
