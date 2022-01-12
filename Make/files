@@ -8,6 +8,6 @@ thermalIncompressibleTwoPhaseMixture/thermalConductivityModels/HarmonicDensityWe
 phaseChangeTwoPhaseMixture/phaseChangeTwoPhaseMixture.C
 phaseChangeTwoPhaseMixture/newPhaseChangeTwoPhaseMixture.C
 Tanasawa/Tanasawa.C
-HardtWondra/HardtWondra.C
+Lee/Lee.C
 
 LIB = $(FOAM_USER_LIBBIN)/libphaseChangeTwoPhaseMixturesPB

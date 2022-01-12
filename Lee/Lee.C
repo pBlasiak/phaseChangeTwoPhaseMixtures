@@ -47,8 +47,8 @@ Foam::phaseChangeTwoPhaseMixtures::Lee::Lee
 :
     phaseChangeTwoPhaseMixture(typeName, U, phi),
 
-    Cc_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("Cc")),
-    Cv_(phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
+    Cc_("Cc", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
+    Cv_("Cv", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
 
     mcCoeff_(Cc_*rho2()),
     mvCoeff_(Cv_*rho1())
@@ -62,7 +62,7 @@ Foam::phaseChangeTwoPhaseMixtures::Lee::Lee
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
-Foam::phaseChangeTwoPhaseMixtures::Lee::mDotAlphal() 
+Foam::phaseChangeTwoPhaseMixtures::Lee::mDotAlphal() const
 {
 	return Pair<tmp<volScalarField>>
 	(
@@ -95,18 +95,23 @@ void Foam::phaseChangeTwoPhaseMixtures::Lee::correct()
 {
 	phaseChangeTwoPhaseMixture::correct();
 
-	calcLimitedAlphal()
+	calcLimitedAlphal();
 
 	// minus sign "-" to provide mc > 0  and mv < 0
-	mCondNoAlphal_ = -mcCoeff_*neg(T_ - TSat_)*(T_ - TSat_)/TSat_;
-	mEvapNoAlphal_ = -mvCoeff_*pos(T_ - TSat_)*(T_ - TSat_)/TSat_;
-
-	mCondAlphal_   = mCondNoAlphal_*(scalar(1) - limitedAlphal_);
-	mEvapAlphal_   = mEvapNoAlphal_*limitedAlphal_;
-
 	// plus sign to provide mc < 0  and mv > 0
-	mCondNoTmTSat_ = -mcCoeff_*neg(T_ - TSat_)*(scalar(1) - limitedAlphal_)/TSat_;
-	mEvapNoTmTSat_ =  mvCoeff_*pos(T_ - TSat_)*limitedAlphal_/TSat_;
+	if(cond_)
+	{
+		mCondNoAlphal_ = -mcCoeff_*neg(T_ - TSat_)*(T_ - TSat_)/TSat_;
+		mCondAlphal_   = mCondNoAlphal_*(scalar(1) - limitedAlphal_);
+		mCondNoTmTSat_ = -mcCoeff_*neg(T_ - TSat_)*(scalar(1) - limitedAlphal_)/TSat_;
+	}
+
+	if(evap_)
+	{
+		mEvapNoAlphal_ = -mvCoeff_*pos(T_ - TSat_)*(T_ - TSat_)/TSat_;
+		mEvapAlphal_   = mEvapNoAlphal_*limitedAlphal_;
+		mEvapNoTmTSat_ =  mvCoeff_*pos(T_ - TSat_)*limitedAlphal_/TSat_;
+	}
 }
 
 bool Foam::phaseChangeTwoPhaseMixtures::Lee::read()

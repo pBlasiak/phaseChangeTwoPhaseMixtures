@@ -102,17 +102,17 @@ public:
         //  and a coefficient to multiply by alphal for the vaporisation rate
 		//  in alphaEqn. 
 		//  Units are kg/(m3 s)
-        virtual Pair<tmp<volScalarField> > mDotAlphal() const;
+        virtual Pair<tmp<volScalarField> > mDotAlphal() const override;
 
         //- Return the volumetric mass condensation (+) and vaporisation (-) rates as coefficients
 		//  to multiply in pEqn
 		//  units are kg/(m3 s)
-        virtual Pair<tmp<volScalarField> > mDotP() const;
+        virtual Pair<tmp<volScalarField> > mDotP() const override;
 
         //- Return the mass condensation (-) and vaporisation (+) rates as coefficients
         //  to multiply by (T - TSat) in TEqn
 		//  units are kg/(m3 s K)
-        virtual Pair<tmp<volScalarField> > mDotT() const;
+        virtual Pair<tmp<volScalarField> > mDotT() const override;
 
         //- Correct the phaseChange model
 		//  In this function mass transfer model should be implemented.
@@ -131,10 +131,10 @@ public:
 		//  4) in TEqn calculate new T based on new alphal but using the stored mass fluxes 
 		//  5) in pEqn calculate new p and U based on new alphal but using the stored mass fluxes
 		//  6) go to next PIMPLE iteration or time-step and start from 1)
-        virtual void correct();
+        virtual void correct() override;
 
         //- Read the transportProperties dictionary and update
-        virtual bool read();
+        virtual bool read() override;
 };
 
 

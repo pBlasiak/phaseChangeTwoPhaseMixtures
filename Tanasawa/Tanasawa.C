@@ -65,8 +65,6 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::Tanasawa
    	mCoeff_(2.0*gamma_/(2.0 - gamma_)/sqrt(2.0*M_PI*R_)*hEvap_*rho2())
 {
 	Info<< "Tanasawa model settings:  " << endl;
-	Info<< "Condensation is " << cond_	<< endl;
-	Info<< "Evaporation is "  << evap_  << endl;
 	Info<< "gamma = "		  << gamma_ << endl;
 }
 

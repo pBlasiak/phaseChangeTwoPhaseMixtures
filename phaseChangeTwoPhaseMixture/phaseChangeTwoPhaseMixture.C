@@ -72,7 +72,7 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
             )
 	    )
 	),
-	HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HW", true)),
+	HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HardtWondra", true)),
 	cutoff_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("cutoff", 1e-3)),
 	limitedAlphalCalculated_(false),
 	magGradLimitedAlphalCalculated_(false),
@@ -260,13 +260,15 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
     TSatLocalPressure_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("TSatLocalPressure"))),
 	printPhaseChange_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("printPhaseChange")))
 {
-	Info<< "TSatGlobal = "				<< TSatG_ << endl;
-	Info<< "pSat = "		  			<< pSat_ << endl;
-	Info<< "hEvap = "		  			<< hEvap_ << endl;
-	Info<< "R = "			  			<< R_ << endl;
-	Info<< "TSatLocalPressure = "       << TSatLocalPressure_ << endl;
-	Info<< "printPhaseChange = "        << printPhaseChange_ << endl;
+	Info<< "TSatGlobal = "				 << TSatG_ << endl;
+	Info<< "pSat = "		  			 << pSat_ << endl;
+	Info<< "hEvap = "		  			 << hEvap_ << endl;
+	Info<< "R = "			  			 << R_ << endl;
+	Info<< "TSatLocalPressure = "        << TSatLocalPressure_ << endl;
+	Info<< "printPhaseChange = "         << printPhaseChange_ << endl;
 
+	Info<< "Condensation is " << cond_	 << endl;
+	Info<< "Evaporation is "  << evap_   << endl;
 	Info<< "Hardt-Wondra algorithm is: " << HW_ << endl;
 	Info<< "Cutoff is set as: "          << cutoff_ << endl;
 }
@@ -574,7 +576,7 @@ bool Foam::phaseChangeTwoPhaseMixture::read()
         lookup("hEvap") >> hEvap_;
         lookup("R") >> R_;
         lookup("printPhaseChange") >> printPhaseChange_;
-        lookup("HW") >> HW_;
+        lookup("HardtWondra") >> HW_;
         lookup("cutoff") >> cutoff_;
         lookup("condensation") >> cond_;
         lookup("evaporation") >> evap_;
