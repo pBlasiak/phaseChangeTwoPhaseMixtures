@@ -72,11 +72,6 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::Tanasawa
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-//Foam::volScalarField Foam::phaseChangeTwoPhaseMixtures::Tanasawa::calcGradAlphal() const
-//{
-//	volScalarField limitedAlpha1 = min(max(alpha1(), scalar(0)), scalar(1));
-//	return mag(fvc::grad(limitedAlpha1));
-//}
 
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
 Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotAlphal() const
@@ -112,17 +107,7 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::correct()
 {
 	phaseChangeTwoPhaseMixture::correct();
 
-    //const dimensionedScalar T0("0", dimTemperature, 0.0);
-    //volScalarField limitedAlpha1 = min(max(alpha1(), scalar(0)), scalar(1));
 	calcMagGradLimitedAlpha();
-    //limitedAlpha1_ = min(max(alpha1(), scalar(0)), scalar(1));
-    //limitedAlpha2_ = min(max(alpha2(), scalar(0)), scalar(1));
-	//volScalarField gradAlphal = mag(fvc::grad(limitedAlpha1));
-//volScalarField psi0Tild = mag(fvc::grad(limitedAlpha1));
-
-
-
-//psi0 = N*jEvap*alpha1*psi0Tild;
 
 	// In Tanasawa model there is no alpha term
 	// probably it should be divided here by alphal and (1-alphal) but it
@@ -135,41 +120,21 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::correct()
 	// Minus sign "-" to provide mc > 0  and mv < 0
 	if (cond_)
 	{
-		//mCondNoAlphal_ = -N*mCoeff_*neg(T_ - TSat_)*(T_ - TSat_)*psi0Tild/sqrt(pow(TSat_,3.0));
 		mCondNoAlphal_ = -mCoeff_*neg(T_ - TSat_)*(T_ - TSat_)*magGradLimitedAlphal_
 			/sqrt(pow(TSat_,3.0));
 		mCondAlphal_   =  mCondNoAlphal_*(1-limitedAlphal_);
-		//mCondNoTmTSat_ = -N*mCoeff_*neg(T_ - TSat_)*psi0Tild/sqrt(pow(TSat_,3.0))*(1-limitedAlpha1);
 		mCondNoTmTSat_ = -mCoeff_*neg(T_ - TSat_)*magGradLimitedAlphal_
 			/sqrt(pow(TSat_,3.0))*(1-limitedAlphal_);
 	}
 
 	if (evap_)
 	{
-		//mEvapNoAlphal_ = -N*mCoeff_*pos(T_ - TSat_)*(T_ - TSat_)*psi0Tild/sqrt(pow(TSat_,3.0));
 		mEvapNoAlphal_ = -mCoeff_*pos(T_ - TSat_)*(T_ - TSat_)*magGradLimitedAlphal_
 			/sqrt(pow(TSat_,3.0));
 		mEvapAlphal_   =  mEvapNoAlphal_*limitedAlphal_;
-		//mEvapNoTmTSat_ =  N*mCoeff_*pos(T_ - TSat_)*psi0Tild/sqrt(pow(TSat_,3.0))*limitedAlpha1;
 		mEvapNoTmTSat_ =  mCoeff_*pos(T_ - TSat_)*magGradLimitedAlphal_
 			/sqrt(pow(TSat_,3.0))*limitedAlphal_;
 	}
-dimensionedScalar intPsi0l = fvc::domainIntegrate(mCondAlphal_);
-
-//volScalarField psil = mCondAlphal_;
-//volScalarField psiv = mEvapAlphal_;
-    //volScalarField psil
-    //(
-    //    IOobject
-    //    (
-    //        "psil",
-    //        runTime.timeName(),
-    //        mesh,
-    //        IOobject::NO_READ,
-    //        IOobject::NO_WRITE
-    //    ),
-	//	mCondAlphal_
-    //);
 }
 
 bool Foam::phaseChangeTwoPhaseMixtures::Tanasawa::read()
@@ -177,8 +142,6 @@ bool Foam::phaseChangeTwoPhaseMixtures::Tanasawa::read()
     if (phaseChangeTwoPhaseMixture::read())
     {
         phaseChangeTwoPhaseMixtureCoeffs_ = subDict(type() + "Coeffs");
-        phaseChangeTwoPhaseMixtureCoeffs_.lookup("condensation") >> cond_;
-        phaseChangeTwoPhaseMixtureCoeffs_.lookup("evaporation") >> evap_;
         phaseChangeTwoPhaseMixtureCoeffs_.lookup("gamma") >> gamma_;
 
 		mCoeff_ = 2.0*gamma_/(2.0 - gamma_)/sqrt(2.0*M_PI*R_)*hEvap_*rho2();

@@ -568,6 +568,10 @@ bool Foam::phaseChangeTwoPhaseMixture::read()
         lookup("hEvap") >> hEvap_;
         lookup("R") >> R_;
         lookup("printPhaseChange") >> printPhaseChange_;
+        lookup("HW") >> HW_;
+        lookup("cutoff") >> cutoff_;
+        lookup("condensation") >> cond_;
+        lookup("evaporation") >> evap_;
 
         return true;
     }

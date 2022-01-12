@@ -36,7 +36,6 @@ SourceFiles
 #define phaseChangeTwoPhaseMixture_H
 
 #include "thermalIncompressibleTwoPhaseMixture.H"
-//#include "HardtWondra.H"
 #include "typeInfo.H"
 #include "runTimeSelectionTables.H"
 #include "volFields.H"
@@ -75,7 +74,7 @@ private:
 		//  default is 1e-3
         scalar cutoff_;
 
-		//- Flag for the magGradLimitedAlphal
+		//- Flag for the magGradLimitedAlphal calculation
 		Switch magGradLimitedAlphalCalculated_;
 
     // Private Member Functions
@@ -270,26 +269,7 @@ public:
 		//  as a coefficient to multiply by (1 - alphal) for the condensation rate
         //  and a coefficient to multiply by alphal for the vaporisation rate
 		//  in alphaEqn. 
-		//  In this function the mass transfer model should be implemented
-		//  without alphal and (1 - alphal) terms included and stored in 
-		//  mCondNoAlphal_ and mEvapNoAlphal_ variables.
-		//  units are kg/(m3 s)
-		//
-		//  Algorithm used in interBoilCondFoam: 
-		//  1) calculate volumetric mass fluxes in alphaEqn.H that are:
-		//     i) multiplied by (1-alphal) for condensation and by alphal for
-		//        evaporation and store them in mCondNoAlphal_ and mEvapNoAlphal_ 
-		//     ii) store also volumetric mass fluxes multiplied by current alphal
-		//         in mCondAlphal_ and mEvapAlphal_
-		//     iii) store also volumetric mass fluxes that are multiplied by (T-TSat) in TEqn
-		//          in mCondNoTmTSat_ and mEvapNoTmTSat_
-		//     These all fluxes can be considered as from previous time-step 
-		//     because they are calculate based on alphal and T from previous time-step
-		//  2) use these fluxes to calculate new alphal field in alphaEqn
-		//  3) if momentumPredictor is on in UEqn, calculate new U based on new alphal
-		//  4) in TEqn calculate new T based on new alphal but using the stored mass fluxes
-		//  5) in pEqn calculate new p and U based on new alphal but using the stored mass fluxes
-		//  6) go to next PIMPLE iteration or time-step and start from 1)
+		//  Units are kg/(m3 s)
         virtual Pair<tmp<volScalarField> > mDotAlphal() const = 0;
 
         //- Return the volumetric mass condensation (+) and vaporisation (-) rates as coefficients
@@ -320,6 +300,22 @@ public:
         Pair<tmp<volScalarField> > vDotT() const;
 
         //- Correct the phaseChange model
+		//  In this function mass transfer model should be implemented.
+		//  Algorithm used in interBoilCondFoam: 
+		//  1) calculate volumetric mass fluxes in alphaEqn.H that are:
+		//     i) multiplied by (1-alphal) for condensation and by alphal for
+		//        evaporation and store them in mCondNoAlphal_ and mEvapNoAlphal_ 
+		//     ii) store also volumetric mass fluxes multiplied by current alphal
+		//         in mCondAlphal_ and mEvapAlphal_
+		//     iii) store also volumetric mass fluxes that are multiplied by (T-TSat) in TEqn
+		//          in mCondNoTmTSat_ and mEvapNoTmTSat_
+		//     These all fluxes can be considered as from previous time-step 
+		//     because they are calculate based on alphal and T from previous time-step
+		//  2) use these fluxes to calculate new alphal field in alphaEqn
+		//  3) if momentumPredictor is on in UEqn, calculate new U based on new alphal
+		//  4) in TEqn calculate new T based on new alphal but using the stored mass fluxes 
+		//  5) in pEqn calculate new p and U based on new alphal but using the stored mass fluxes
+		//  6) go to next PIMPLE iteration or time-step and start from 1)
         virtual void correct();
 
         //- Read the transportProperties dictionary and update
