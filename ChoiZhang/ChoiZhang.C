@@ -62,16 +62,25 @@ Foam::phaseChangeTwoPhaseMixtures::ChoiZhang::ChoiZhang
 
 void Foam::phaseChangeTwoPhaseMixtures::ChoiZhang::correct()
 {
-	phaseChangeTwoPhaseMixture::correct();
+	phaseChangeTwoPhaseMixtures::Lee::correct();
 
 	//Ccvar_ = Cc_; // jak tego nie ma to Cc najpierw maleje do 1e-150 apotem rosnie do 1e+300
 	scalar totvmCond(0);
 	scalar totvmEvap(0);
 	totvmCond = gSum(mCondAlphal_);
 	totvmEvap = gSum(mEvapAlphal_);
-	if (!(totvmCond == 0 && mag(totvmEvap) == 0))
-		Ccvar_.value() -= Ccvar_.value()*((totvmCond - mag(totvmEvap))
-	    	/max(totvmCond, mag(totvmEvap)));
+	
+	// model makes sense only if both condensation and evaporation appear
+	if (cond_ && evap_)
+	{
+		if (!(totvmCond == 0 && mag(totvmEvap) == 0))
+			Ccvar_.value() -= Ccvar_.value()*((totvmCond - mag(totvmEvap))
+		    	/max(totvmCond, mag(totvmEvap)));
+	}
+	else
+	{
+		Ccvar_ = Cc_;
+	}
 	
     mcCoeff_ = Ccvar_*rho2();
 	//Info<< "Updated mcCoeff = " << mcCoeff_.value() << endl;

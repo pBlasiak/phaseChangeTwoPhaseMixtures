@@ -9,5 +9,6 @@ phaseChangeTwoPhaseMixture/phaseChangeTwoPhaseMixture.C
 phaseChangeTwoPhaseMixture/newPhaseChangeTwoPhaseMixture.C
 Tanasawa/Tanasawa.C
 Lee/Lee.C
+ChoiZhang/ChoiZhang.C
 
 LIB = $(FOAM_USER_LIBBIN)/libphaseChangeTwoPhaseMixturesPB
