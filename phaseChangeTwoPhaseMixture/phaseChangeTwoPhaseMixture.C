@@ -76,6 +76,20 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	cutoff_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("cutoff", 1e-3)),
 	limitedAlphalCalculated_(false),
 	magGradLimitedAlphalCalculated_(false),
+    correctionTerm_
+    (
+        IOobject
+        (
+            "correctionTerm",
+            U.time().timeName(),
+            U.db(),
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+        ),
+        U.mesh(),
+        //dimensionedScalar("correctionTerm", dimensionSet(1, 0, -1, 0, 0, 0, 0), 0.0)
+        dimensionedScalar("correctionTerm", dimensionSet(1,-1,-3,-1,0,0,0), 0.0)
+    ),
     //cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
     //evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
     cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_),
@@ -490,6 +504,7 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 			
 			//- Evaporation source term in energy equation
 			//hESource = -N*alpha1*psi0Tild/Rph;
+			correctionTerm_ = psiv*(-Nv*(1.0-limitedAlphal_)*cp2_+Nl*limitedAlphal_*cp1_);
 		}
 
 		magGradLimitedAlphalCalculated_ = false;

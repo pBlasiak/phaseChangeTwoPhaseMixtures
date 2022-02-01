@@ -80,6 +80,9 @@ private:
 		//- Flag for the magGradLimitedAlphal calculation
 		Switch magGradLimitedAlphalCalculated_;
 
+		//- Correction source-term for TEqn for Hardt-Wondra algorithm
+		volScalarField correctionTerm_;
+
     // Private Member Functions
 
         //- Disallow copy construct
@@ -222,6 +225,11 @@ public:
 	
 	    //- Hardt-Wondra algorithm
 		void HardtWondra();
+
+		const volScalarField& correctionTerm() const
+		{
+			return correctionTerm_;
+		}
 
         //- Return const-access to the condensation mass flux
         const volScalarField& mCond() const
