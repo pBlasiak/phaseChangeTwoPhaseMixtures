@@ -424,6 +424,7 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 		if (evap_)
 		{
 			mEvapNoAlphal_ *= N;
+			//mEvapAlphal_   *= N;
 			mEvapNoTmTSat_ *= N;
 
 			dimensionedScalar intPsi0v = fvc::domainIntegrate(mEvapAlphal_);
@@ -504,7 +505,84 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 			
 			//- Evaporation source term in energy equation
 			//hESource = -N*alpha1*psi0Tild/Rph;
-			correctionTerm_ = psiv*(-Nv*(1.0-limitedAlphal_)*cp2_+Nl*limitedAlphal_*cp1_);
+			//correctionTerm_ = psiv*(-Nv*(1.0-limitedAlphal_)*cp2_+Nl*limitedAlphal_*cp1_);
+
+			///////////////////////////////////////////////////////////////////////////////
+
+			//dimensionedScalar intPsiNoAlphal0v = fvc::domainIntegrate(mEvapNoAlphal_);
+
+			//volScalarField psivNoAlphal
+			//(
+			//    IOobject
+			//    (
+			//        "psivNoAlphal",
+			//        mesh.time().timeName(),
+			//        mesh,
+			//        IOobject::NO_READ,
+			//        IOobject::NO_WRITE
+			//    ),
+			//    mesh,
+			//    dimensionedScalar(mEvapAlphal_.dimensions(), Zero),
+			//    zeroGradientFvPatchField<scalar>::typeName
+			//);
+			//
+			//fvScalarMatrix psivNoAlphalEqn
+			//(
+			//	fvm::Sp(scalar(1),psivNoAlphal) - fvm::laplacian(DPsi,psivNoAlphal) == mEvapNoAlphal_
+			//);
+			//
+			//psivNoAlphalEqn.solve();
+			//
+			////- Cut cells with cutoff < alpha1 < 1-cutoff and rescale remaining source term field
+			//dimensionedScalar intPsiNoAlphalLiquidEvaporation ("intPsiNoAlphalLiquidEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+			//dimensionedScalar intPsiNoAlphalVaporEvaporation ("intPsiNoAlphalVaporEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+
+
+			//forAll(mesh.C(),iCell)
+			//{
+			//	if (limitedAlphal_[iCell] < cutoff_)
+			//	{
+			//		intPsiNoAlphalVaporEvaporation.value() += (1.0-limitedAlphal_[iCell])*psivNoAlphal[iCell]*mesh.V()[iCell];
+			//	}
+			//	else if (limitedAlphal_[iCell] > 1.0-cutoff_)
+			//	{
+			//		intPsiNoAlphalLiquidEvaporation.value() += limitedAlphal_[iCell]*psivNoAlphal[iCell]*mesh.V()[iCell];
+			//	}
+			//}
+			//
+			////- Calculate Nl and Nv
+			//dimensionedScalar NlNoAlphal ("NlNoAlphal", dimensionSet(0,0,0,0,0,0,0), 2.0);
+			//dimensionedScalar NvNoAlphal ("NvNoAlphal", dimensionSet(0,0,0,0,0,0,0), 2.0);
+			//
+			//reduce(intPsiNoAlphalLiquidEvaporation.value(),sumOp<scalar>());
+			//reduce(intPsiNoAlphalVaporEvaporation.value(),sumOp<scalar>());
+			//
+			//if (intPsiNoAlphalLiquidEvaporation.value() > 1e-99)
+			//{
+			//    NlNoAlphal = intPsiNoAlphal0v/intPsiNoAlphalLiquidEvaporation;
+			//}
+			//if (intPsiNoAlphalVaporEvaporation.value() > 1e-99)
+			//{
+			//    NvNoAlphal = intPsiNoAlphal0v/intPsiNoAlphalVaporEvaporation;
+			//}
+			//
+			//        
+			////- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
+			//forAll(mesh.C(),iCell)
+			//{
+			//	if (limitedAlphal_[iCell] < cutoff_)
+			//	{
+			//		mEvapNoAlphal_[iCell] = -NvNoAlphal.value()*(1.0-limitedAlphal_[iCell])*psivNoAlphal[iCell];
+			//	}
+			//	else if (limitedAlphal_[iCell] > 1.0-cutoff_)
+			//	{
+			//		mEvapNoAlphal_[iCell] = NlNoAlphal.value()*limitedAlphal_[iCell]*psivNoAlphal[iCell];
+			//	}
+			//	else
+			//	{
+			//		mEvapNoAlphal_[iCell] = 0.0;
+			//	}
+			//}
 		}
 
 		magGradLimitedAlphalCalculated_ = false;
