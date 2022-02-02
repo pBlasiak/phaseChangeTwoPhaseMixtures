@@ -80,9 +80,6 @@ private:
 		//- Flag for the magGradLimitedAlphal calculation
 		Switch magGradLimitedAlphalCalculated_;
 
-		//- Correction source-term for TEqn for Hardt-Wondra algorithm
-		volScalarField correctionTerm_;
-
     // Private Member Functions
 
         //- Disallow copy construct
