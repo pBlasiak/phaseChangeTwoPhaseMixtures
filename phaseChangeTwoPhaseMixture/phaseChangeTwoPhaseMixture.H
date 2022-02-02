@@ -224,12 +224,14 @@ public:
     // Member Functions
 	
 	    //- Hardt-Wondra algorithm
+		//  current implementation is:
+		//  - no spread mass source terms in alphaEqn
+		//  - spread mass source terms in pEqn
+		//  - no spread mass source terms in TEqn
+		//  Additionally in TEqn mass source term the correction
+		//  term h_c is ommited (Eq. (23)) because it gives 
+		//  worse results
 		void HardtWondra();
-
-		const volScalarField& correctionTerm() const
-		{
-			return correctionTerm_;
-		}
 
         //- Return const-access to the condensation mass flux
         const volScalarField& mCond() const
