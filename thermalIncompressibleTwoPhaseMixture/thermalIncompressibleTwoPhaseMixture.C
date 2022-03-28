@@ -79,6 +79,14 @@ Foam::thermalIncompressibleTwoPhaseMixture::thermalIncompressibleTwoPhaseMixture
             U,
             phi
         )
+    ),
+    kinematicViscosityModel_
+    (
+        kinematicViscosity::New
+        (
+            U,
+            phi
+        )
     )
 {
 

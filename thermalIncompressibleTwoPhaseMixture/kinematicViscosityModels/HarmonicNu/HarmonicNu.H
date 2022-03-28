@@ -22,58 +22,53 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::thermalConductivityModels::Harmonic
+    Foam::kinematicViscosityModels::HarmonicNu
 
 Description
-    Harmonic thermal conductivity model for a mixture. 
-
-    Reference:
-    \verbatim
-	Cosden, Ian A., "A Hybrid Atomistic-Continuum Model for Liquid-Vapor Phase Change" (2013). 
-	Publicly Accessible Penn Dissertations. 846.  
-    https://repository.upenn.edu/edissertations/846
-    \endverbatim
+TODO poprawic
+    HarmonicNu thermal conductivity model for a mixture. 
+	kEff = alpha1*k1 + alpha2*k2
 
 SourceFiles
-    Harmonic.C
+    HarmonicNu.C
 
 \*--------------------------------------------------------------------*/
 
-#ifndef Harmonic_H
-#define Harmonic_H
+#ifndef HarmonicNu_H
+#define HarmonicNu_H
 
-#include "thermalConductivity.H"
+#include "kinematicViscosity.H"
 #include "thermalIncompressibleTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * * * *  * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
-namespace thermalConductivityModels
+namespace kinematicViscosityModels
 {
 
 /*--------------------------------------------------------------------*\
-                              Class Harmonic
+                              Class HarmonicNu
 \*--------------------------------------------------------------------*/
 
-class Harmonic
+class HarmonicNu
 :
-    public thermalConductivity
+    public kinematicViscosity
 {
     // Private data
 
-        //dimensionedScalar Cc_;
+        //volScalarField& nu;
 
 public:
 
     //- Runtime type information
-    TypeName("harmonic");
+    TypeName("harmonicNu");
 
 
     // Constructors
 
         //- construct from components
-        Harmonic
+        HarmonicNu
         (
             const volVectorField& U,
             const surfaceScalarField& phi
@@ -81,14 +76,14 @@ public:
 
 
     //- Destructor
-    virtual ~Harmonic()
+    virtual ~HarmonicNu()
     {}
 
 
     // Member Functions
 	
-        //- Return the effective laminar thermal conductivity
-        virtual tmp<volScalarField> k(const thermalIncompressibleTwoPhaseMixture* titpm) const override;
+        //- Correct the kinematic viscosity
+        virtual void correct(thermalIncompressibleTwoPhaseMixture* titpm) override;
 
         //- Read the transportProperties dictionary and update
         virtual bool read();
@@ -97,7 +92,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace thermalConductivityModels
+} // End namespace kinematicViscosityModels
 } // End namespace Foam
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -38,6 +38,7 @@ SourceFiles
 #include "incompressibleTwoPhaseMixture.H"
 //#include "immiscibleIncompressibleSmoothedTwoPhaseMixture.H"
 #include "thermalConductivity.H"
+#include "kinematicViscosity.H"
 #include "fvc.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -67,6 +68,7 @@ protected:
         dimensionedScalar cp2_;
 
 		autoPtr<thermalConductivity> thermalConductivityModel_;
+		autoPtr<kinematicViscosity>  kinematicViscosityModel_;
 
 
 public:
@@ -87,6 +89,13 @@ public:
     //- Destructor
     virtual ~thermalIncompressibleTwoPhaseMixture()
     {}
+
+    // Set function
+	   void setNu(volScalarField nutemp)
+	   {
+			nu_ = nutemp;
+	   }
+
 
 
     // Access function
@@ -143,9 +152,10 @@ public:
 		tmp<volScalarField> cp() const;
 
         //- Correct the transport and interface properties
-        virtual void correct()
+        virtual void correct() override
         {
-			incompressibleTwoPhaseMixture::correct();
+			kinematicViscosityModel_->correct(this);
+			//incompressibleTwoPhaseMixture::correct();
         }
 
         //- Read base transportProperties dictionary
