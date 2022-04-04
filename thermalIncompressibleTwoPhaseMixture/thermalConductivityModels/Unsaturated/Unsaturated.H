@@ -25,6 +25,9 @@ Class
     Foam::thermalConductivityModels::Unsaturated
 
 Description
+TODO: it is not implemented!!!!!!!!!!
+      now it works like linear
+
     Unsaturated thermal conductivity model for a mixture. 
 	kEff = 2*k_unsaturated
 
