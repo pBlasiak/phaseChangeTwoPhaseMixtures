@@ -72,14 +72,45 @@ Foam::thermalIncompressibleTwoPhaseMixture::thermalIncompressibleTwoPhaseMixture
         subDict(phase2Name_),
 		"cp"
     ),
-    thermalConductivityModel_
+    nuModel_
     (
-        thermalConductivity::New
+        thermalProperty::New
         (
             U,
-            phi
+            phi, 
+			"nu"
         )
-    )
+    ),
+    rhoModel_
+    (
+        thermalProperty::New
+        (
+            U,
+            phi, 
+			"rho"
+        )
+    ),
+    kModel_
+    (
+        thermalProperty::New
+        (
+            U,
+            phi, 
+			"k"
+        )
+    ),
+    cpModel_
+    (
+        thermalProperty::New
+        (
+            U,
+            phi, 
+			"cp"
+        )
+    ),
+	rho_(U.db().lookupObjectRef<volScalarField>("rho")),
+	k_(U.db().lookupObjectRef<volScalarField>("k")),
+	cp_(U.db().lookupObjectRef<volScalarField>("cp"))
 {
 
 }
@@ -105,41 +136,49 @@ Foam::thermalIncompressibleTwoPhaseMixture::thermalIncompressibleTwoPhaseMixture
 //    );
 //}
 
-Foam::tmp<Foam::volScalarField> Foam::thermalIncompressibleTwoPhaseMixture::rho() const
+//Foam::tmp<Foam::volScalarField> Foam::thermalIncompressibleTwoPhaseMixture::rho() const
+//{
+//    const volScalarField limitedAlpha1
+//    (
+//        min(max(alpha1(), scalar(0)), scalar(1))
+//    );
+//
+//    return tmp<volScalarField>
+//    (
+//		new volScalarField
+//        (
+//            "rhoMixture",
+//            limitedAlpha1*rho1_
+//          + (scalar(1) - limitedAlpha1)*rho2_
+//        )
+//    );
+//}
+//
+//Foam::tmp<Foam::volScalarField> Foam::thermalIncompressibleTwoPhaseMixture::cp() const
+//{
+//	const volScalarField limitedAlpha1
+//	(
+//		min(max(alpha1(), scalar(0)), scalar(1))
+//	);
+//
+//	return tmp<volScalarField>
+//	(
+//		new volScalarField
+//		(
+//			"cp",
+//			( 
+//				cp1_*rho1_*limitedAlpha1 + cp2_*rho2_*(scalar(1) - limitedAlpha1) 
+//			)/( rho1_*limitedAlpha1 + rho2_*(scalar(1) - limitedAlpha1) )
+//		)
+//	);
+//}
+void Foam::thermalIncompressibleTwoPhaseMixture::correct()
 {
-    const volScalarField limitedAlpha1
-    (
-        min(max(alpha1(), scalar(0)), scalar(1))
-    );
-
-    return tmp<volScalarField>
-    (
-		new volScalarField
-        (
-            "rhoMixture",
-            limitedAlpha1*rho1_
-          + (scalar(1) - limitedAlpha1)*rho2_
-        )
-    );
-}
-
-Foam::tmp<Foam::volScalarField> Foam::thermalIncompressibleTwoPhaseMixture::cp() const
-{
-	const volScalarField limitedAlpha1
-	(
-		min(max(alpha1(), scalar(0)), scalar(1))
-	);
-
-	return tmp<volScalarField>
-	(
-		new volScalarField
-		(
-			"cp",
-			( 
-				cp1_*rho1_*limitedAlpha1 + cp2_*rho2_*(scalar(1) - limitedAlpha1) 
-			)/( rho1_*limitedAlpha1 + rho2_*(scalar(1) - limitedAlpha1) )
-		)
-	);
+	//incompressibleTwoPhaseMixture::correct();
+	calcNu();
+	calcRho();
+	calcK();
+	calcCp(); 
 }
 
 bool Foam::thermalIncompressibleTwoPhaseMixture::read()

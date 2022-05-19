@@ -22,18 +22,18 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::thermalConductivity
+    Foam::thermalProperty
 
 Description
 
 SourceFiles
-    thermalConductivity.C
-    newPhaseChangeModel.C
+    thermalProperty.C
+    newThermalProperty.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef thermalConductivity_H
-#define thermalConductivity_H
+#ifndef thermalProperty_H
+#define thermalProperty_H
 
 #include "typeInfo.H"
 #include "runTimeSelectionTables.H"
@@ -50,17 +50,17 @@ namespace Foam
 class thermalIncompressibleTwoPhaseMixture;
 
 /*---------------------------------------------------------------------------*\
-                Class thermalConductivity Declaration
+                Class thermalProperty Declaration
 \*---------------------------------------------------------------------------*/
 
-class thermalConductivity
+class thermalProperty
 {
 
 protected:
 
     // Protected data
 
-        dictionary thermalConductivityDict_;
+        dictionary thermalPropertyDict_;
 
         const volVectorField& U_;
         const surfaceScalarField& phi_;
@@ -68,15 +68,15 @@ protected:
     // Private Member Functions
 
         //- Disallow copy construct
-        thermalConductivity(const thermalConductivity&);
+        thermalProperty(const thermalProperty&);
 
         //- Disallow default bitwise assignment
-        void operator=(const thermalConductivity&);
+        void operator=(const thermalProperty&);
 
 public:
 
     //- Runtime type information
-    TypeName("thermalConductivity");
+    TypeName("thermalProperty");
 
 
     // Declare run-time constructor selection table
@@ -84,7 +84,7 @@ public:
         declareRunTimeSelectionTable
         (
             autoPtr,
-            thermalConductivity,
+            thermalProperty,
             components,
             (
                 const volVectorField& U,
@@ -97,17 +97,18 @@ public:
     // Selectors
 
         //- Return a reference to the selected thermal conductivity model
-        static autoPtr<thermalConductivity> New
+        static autoPtr<thermalProperty> New
         (
             const volVectorField& U,
-            const surfaceScalarField& phi
+            const surfaceScalarField& phi,
+			const word& thermProp
         );
 
 
     // Constructors
 
         //- Construct from components
-        thermalConductivity
+        thermalProperty
         (
             const word& type,
             const volVectorField& U,
@@ -116,15 +117,23 @@ public:
 
 
     //- Destructor
-    virtual ~thermalConductivity()
+    virtual ~thermalProperty()
     {}
 
 
     // Member Functions
 
+	typedef  const dimensionedScalar& (Foam::thermalIncompressibleTwoPhaseMixture::*th)() const;
 
         //- Return the effective laminar thermal conductivity
-        virtual tmp<volScalarField> k(const thermalIncompressibleTwoPhaseMixture* titpm) const = 0;
+        virtual tmp<volScalarField> calcThermProp
+		(
+			const thermalIncompressibleTwoPhaseMixture* titpm,
+			th T1 = nullptr, 
+			th T2 = nullptr
+			//const dimensionedScalar& T1,
+			//const dimensionedScalar& T2
+		) const = 0;
 
         //- Read the transportProperties dictionary and update
         virtual bool read() = 0;

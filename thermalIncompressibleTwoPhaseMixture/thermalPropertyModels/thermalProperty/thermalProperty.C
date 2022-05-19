@@ -23,27 +23,27 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "thermalConductivity.H"
+#include "thermalProperty.H"
 //#include "thermalIncompressibleTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
 {
-    defineTypeNameAndDebug(thermalConductivity, 0);
-    defineRunTimeSelectionTable(thermalConductivity, components);
+    defineTypeNameAndDebug(thermalProperty, 0);
+    defineRunTimeSelectionTable(thermalProperty, components);
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::thermalConductivity::thermalConductivity
+Foam::thermalProperty::thermalProperty
 (
     const word& type,
     const volVectorField& U,
     const surfaceScalarField& phi
 )
 :
-    thermalConductivityDict_
+    thermalPropertyDict_
 	(
 	    IOdictionary
 	    (
@@ -65,11 +65,11 @@ Foam::thermalConductivity::thermalConductivity
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 
-bool Foam::thermalConductivity::read()
+bool Foam::thermalProperty::read()
 {
     //if (incompressibleTwoPhaseMixture::read())
     //{
-    //    thermalConductivityCoeffs_ = subDict(type() + "Coeffs");
+    //    thermalPropertyCoeffs_ = subDict(type() + "Coeffs");
     //    lookup("TSatGlobal") >> TSatG_;
     //    lookup("TSatLocalPressure") >> TSatLocalPressure_;
     //    lookup("pSat") >> pSat_;

@@ -37,7 +37,7 @@ SourceFiles
 
 #include "incompressibleTwoPhaseMixture.H"
 //#include "immiscibleIncompressibleSmoothedTwoPhaseMixture.H"
-#include "thermalConductivity.H"
+#include "thermalProperty.H"
 #include "fvc.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -51,7 +51,6 @@ namespace Foam
 
 class thermalIncompressibleTwoPhaseMixture
 :
-    //public immiscibleIncompressibleSmoothedTwoPhaseMixture
     public incompressibleTwoPhaseMixture
 {
 protected:
@@ -66,8 +65,15 @@ protected:
         dimensionedScalar cp1_;
         dimensionedScalar cp2_;
 
-		autoPtr<thermalConductivity> thermalConductivityModel_;
+		autoPtr<thermalProperty> nuModel_;
+		autoPtr<thermalProperty> rhoModel_;
+		autoPtr<thermalProperty> kModel_;
+		autoPtr<thermalProperty> cpModel_;
+		//autoPtr<thermalProperty> rhoCpModel_; //????
 
+		volScalarField& rho_;
+		volScalarField& k_;
+		volScalarField& cp_;
 
 public:
 
@@ -115,38 +121,62 @@ public:
             return cp2_;
         };
 
-        //- Return the effective laminar thermal conductivity
-		tmp<volScalarField> k() const
+		//- Calculates kinematic viscosity of the mixture
+		void calcNu() 
 		{
-             return thermalConductivityModel_->k(this);
+             nu_ = nuModel_->calcThermProp(this);
+		} 
+
+		//- Calculates density of the mixture
+		void calcRho() 
+		{
+             rho_ = rhoModel_->calcThermProp
+			 (
+				this,
+				&thermalIncompressibleTwoPhaseMixture::rho1,
+				&thermalIncompressibleTwoPhaseMixture::rho2
+			 );
+		} 
+
+        //- Calculates the effective laminar thermal conductivity
+		void calcK() 
+		{
+             k_ = kModel_->calcThermProp
+			 (
+				this,
+				&thermalIncompressibleTwoPhaseMixture::k1,
+				&thermalIncompressibleTwoPhaseMixture::k2
+			 );
 		}
 
-        //- Return the effective face-interpolated laminar thermal conductivity
-		tmp<surfaceScalarField> kf() const
+        ////- Return the effective face-interpolated laminar thermal conductivity
+		//tmp<surfaceScalarField> kf() const
+		//{
+	    //    return tmp<surfaceScalarField>
+	    //    (
+	    //    	new surfaceScalarField
+	    //    	(
+	    //    		"kf",
+	    //    		(
+	    //    		    fvc::interpolate(k())
+	    //    		)
+	    //    	)
+	    //    );
+		//}
+
+		//- Calculates specific heat of the mixture
+		void calcCp() 
 		{
-	        return tmp<surfaceScalarField>
-	        (
-	        	new surfaceScalarField
-	        	(
-	        		"kf",
-	        		(
-	        		    fvc::interpolate(k())
-	        		)
-	        	)
-	        );
+             cp_ = cpModel_->calcThermProp
+			 (
+				this,
+				&thermalIncompressibleTwoPhaseMixture::cp1,
+				&thermalIncompressibleTwoPhaseMixture::cp2
+			 );
 		}
-
-		//- Return density of the mixture
-		tmp<volScalarField> rho() const;
-
-		//- Return specific heat of the mixture
-		tmp<volScalarField> cp() const;
 
         //- Correct the transport and interface properties
-        virtual void correct()
-        {
-			incompressibleTwoPhaseMixture::correct();
-        }
+        virtual void correct() override;
 
         //- Read base transportProperties dictionary
         virtual bool read();

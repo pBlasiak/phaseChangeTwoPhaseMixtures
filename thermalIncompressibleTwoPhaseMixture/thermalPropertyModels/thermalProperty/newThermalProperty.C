@@ -23,16 +23,17 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "thermalConductivity.H"
+#include "thermalProperty.H"
 //#include "incompressibleTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-Foam::autoPtr<Foam::thermalConductivity>
-Foam::thermalConductivity::New
+Foam::autoPtr<Foam::thermalProperty>
+Foam::thermalProperty::New
 (
     const volVectorField& U,
-    const surfaceScalarField& phi
+    const surfaceScalarField& phi,
+    const word& thermProp
 )
 {
     IOdictionary transportPropertiesDict
@@ -48,29 +49,29 @@ Foam::thermalConductivity::New
         )
     );
 
-    word thermalConductivityTypeName
+    word thermalPropertyTypeName
     (
-        transportPropertiesDict.lookup("thermalConductivityModel")
+        transportPropertiesDict.lookup(thermProp + "Model")
     );
 
-    Info<< "Selecting thermal conductivity model "
-        << thermalConductivityTypeName << endl;
+    Info<< "Selecting "
+        << thermalPropertyTypeName << endl;
 
     componentsConstructorTable::iterator cstrIter =
         componentsConstructorTablePtr_
-            ->find(thermalConductivityTypeName);
+            ->find(thermalPropertyTypeName);
 
     if (cstrIter == componentsConstructorTablePtr_->end())
     {
         FatalErrorInFunction
-            << "Unknown thermalConductivity type "
-            << thermalConductivityTypeName << endl << endl
-            << "Valid  thermalConductivitys are : " << endl
+            << "Unknown thermalProperty type "
+            << thermalPropertyTypeName << endl << endl
+            << "Valid  thermalPropertys are : " << endl
             << componentsConstructorTablePtr_->sortedToc()
             << exit(FatalError);
     }
 
-    return autoPtr<thermalConductivity>(cstrIter()(U, phi));
+    return autoPtr<thermalProperty>(cstrIter()(U, phi));
 }
 
 

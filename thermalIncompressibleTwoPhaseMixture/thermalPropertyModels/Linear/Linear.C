@@ -30,25 +30,25 @@ License
 
 namespace Foam
 {
-namespace thermalConductivityModels
+namespace thermalPropertyModels
 {
     defineTypeNameAndDebug(Linear, 0);
-    addToRunTimeSelectionTable(thermalConductivity, Linear, components);
+    addToRunTimeSelectionTable(thermalProperty, Linear, components);
 }
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::thermalConductivityModels::Linear::Linear
+Foam::thermalPropertyModels::Linear::Linear
 (
     const volVectorField& U,
     const surfaceScalarField& phi
 )
 :
-    thermalConductivity(typeName, U, phi)
+    thermalProperty(typeName, U, phi)
 
-    //Cc_(thermalConductivityCoeffs_.subDict(type() + "Coeffs").lookup("Cc")),
-    //Cv_(thermalConductivityCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
+    //Cc_(thermalPropertyCoeffs_.subDict(type() + "Coeffs").lookup("Cc")),
+    //Cv_(thermalPropertyCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
 
     //mcCoeff_(Cc_*rho2()),
     //mvCoeff_(Cv_*rho1())
@@ -62,7 +62,12 @@ Foam::thermalConductivityModels::Linear::Linear
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 Foam::tmp<Foam::volScalarField> 
-Foam::thermalConductivityModels::Linear::k(const Foam::thermalIncompressibleTwoPhaseMixture* titpm) const
+Foam::thermalPropertyModels::Linear::calcThermProp
+(
+			const thermalIncompressibleTwoPhaseMixture* titpm,
+			th T1,
+			th T2 
+) const
 {
 	const volScalarField limitedAlpha1
 	(
@@ -73,21 +78,21 @@ Foam::thermalConductivityModels::Linear::k(const Foam::thermalIncompressibleTwoP
     (
 		new volScalarField
         (
-            "k",
-            limitedAlpha1*titpm->k1()
-          + (scalar(1) - limitedAlpha1)*titpm->k2()
+            "thermProp",
+            limitedAlpha1*titpm->*T1
+          + (scalar(1) - limitedAlpha1)*titpm->*T2
         )
 	);
 }
 
-bool Foam::thermalConductivityModels::Linear::read()
+bool Foam::thermalPropertyModels::Linear::read()
 {
-    //if (thermalConductivity::read())
+    //if (thermalProperty::read())
     //{
-        //thermalConductivityCoeffs_ = subDict(type() + "Coeffs");
+        //thermalPropertyCoeffs_ = subDict(type() + "Coeffs");
 
-        //thermalConductivityCoeffs_.lookup("Cc") >> Cc_;
-        //thermalConductivityCoeffs_.lookup("Cv") >> Cv_;
+        //thermalPropertyCoeffs_.lookup("Cc") >> Cc_;
+        //thermalPropertyCoeffs_.lookup("Cv") >> Cv_;
 
         //mcCoeff_ = Cc_*rho2();
         //mvCoeff_ = Cv_*rho1();

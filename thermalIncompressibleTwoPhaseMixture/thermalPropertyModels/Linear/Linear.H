@@ -22,56 +22,38 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::thermalConductivityModels::Unsaturated
+    Foam::thermalPropertyModels::Linear
 
 Description
-TODO: it is not implemented!!!!!!!!!!
-      now it works like linear
-
-    Unsaturated thermal conductivity model for a mixture. 
-	kEff = 2*k_unsaturated
-
-Reference:
-@article{SUN20121101,
-title = {Development of a vapor–liquid phase change model for volume-of-fluid method in FLUENT},
-journal = {International Communications in Heat and Mass Transfer},
-volume = {39},
-number = {8},
-pages = {1101-1106},
-year = {2012},
-issn = {0735-1933},
-doi = {https://doi.org/10.1016/j.icheatmasstransfer.2012.07.020},
-url = {https://www.sciencedirect.com/science/article/pii/S0735193312001807},
-author = {Dong-Liang Sun and Jin-Liang Xu and Li Wang},
-keywords = {Phase change model, Volume-of-fluid method, FLUENT},
-abstract = {In this paper, a vapor–liquid phase change model is proposed for volume-of-fluid (VOF) method in FLUENT. This model is suitable for the case in which both unsaturated phase and saturated phase are present. In this model: (1) the unsaturated-phase thermal conductivity λuns and specific heat Cp,uns are actual physical parameters; (2) the saturated-phase thermal conductivity λs and specific heat Cp,s are assumed as zero and Cp,uns, respectively; (3) the interfacial mass-transfer rate m˙s=−m˙uns=2λuns(∇αuns⋅∇T)/L. Finally, the accuracy of the vapor–liquid phase change model is verified by one-dimensional Stefan problem and two-dimensional film boiling problem.}
-}
+TODO poprawic
+    Linear thermal property model for a mixture. 
+	thermProp = alpha1*thermProp1 + alpha2*thermProp2
 
 SourceFiles
-    Unsaturated.C
+    Linear.C
 
 \*--------------------------------------------------------------------*/
 
-#ifndef Unsaturated_H
-#define Unsaturated_H
+#ifndef Linear_H
+#define Linear_H
 
-#include "thermalConductivity.H"
+#include "thermalProperty.H"
 #include "thermalIncompressibleTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * * * *  * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
-namespace thermalConductivityModels
+namespace thermalPropertyModels
 {
 
 /*--------------------------------------------------------------------*\
-                              Class Unsaturated
+                              Class Linear
 \*--------------------------------------------------------------------*/
 
-class Unsaturated
+class Linear
 :
-    public thermalConductivity
+    public thermalProperty
 {
     // Private data
 
@@ -85,13 +67,13 @@ class Unsaturated
 public:
 
     //- Runtime type information
-    TypeName("unsaturated");
+    TypeName("linear");
 
 
     // Constructors
 
         //- construct from components
-        Unsaturated
+        Linear
         (
             const volVectorField& U,
             const surfaceScalarField& phi
@@ -99,14 +81,19 @@ public:
 
 
     //- Destructor
-    virtual ~Unsaturated()
+    virtual ~Linear()
     {}
 
 
     // Member Functions
 	
-        //- Return the effective laminar thermal conductivity
-        virtual tmp<volScalarField> k(const thermalIncompressibleTwoPhaseMixture* titpm) const override;
+        //- Return the effective laminar thermal property
+        virtual tmp<volScalarField> calcThermProp
+		(
+			const thermalIncompressibleTwoPhaseMixture* titpm,
+			th T1 = nullptr, 
+			th T2 = nullptr
+		) const override;
 
         //- Read the transportProperties dictionary and update
         virtual bool read();
@@ -115,7 +102,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace thermalConductivityModels
+} // End namespace thermalPropertyModels
 } // End namespace Foam
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
