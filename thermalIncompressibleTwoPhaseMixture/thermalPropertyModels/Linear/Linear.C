@@ -79,8 +79,8 @@ Foam::thermalPropertyModels::Linear::calcThermProp
 		new volScalarField
         (
             "thermProp",
-            limitedAlpha1*titpm->*T1
-          + (scalar(1) - limitedAlpha1)*titpm->*T2
+            limitedAlpha1*(*titpm.*T1)()
+          + (scalar(1) - limitedAlpha1)*(*titpm.*T2)()
         )
 	);
 }

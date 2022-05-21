@@ -25,7 +25,6 @@ Class
     Foam::thermalPropertyModels::Linear
 
 Description
-TODO poprawic
     Linear thermal property model for a mixture. 
 	thermProp = alpha1*thermProp1 + alpha2*thermProp2
 
@@ -59,10 +58,6 @@ class Linear
 
         //dimensionedScalar Cc_;
         //dimensionedScalar Cv_;
-
-        //dimensionedScalar mcCoeff_;
-        //dimensionedScalar mvCoeff_;
-
 
 public:
 
