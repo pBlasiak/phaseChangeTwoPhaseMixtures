@@ -124,7 +124,17 @@ public:
 		//- Calculates kinematic viscosity of the mixture
 		void calcNu() 
 		{
-             nu_ = nuModel_->calcThermProp(this);
+			tmp<volScalarField> tnu1 = nuModel1_->nu();
+			const volScalarField& nu1 = tnu1();
+			tmp<volScalarField> tnu2 = nuModel2_->nu();
+			const volScalarField& nu2 = tnu2();
+
+			nu_ = nuModel_->calcThermProp
+			(
+			   this,
+			   nu1,
+			   nu2
+			);
 		} 
 
 		//- Calculates density of the mixture
@@ -175,7 +185,25 @@ public:
 			 );
 		}
 
-        //- Correct the transport and interface properties
+		//- Returns const-access to mixture density
+		tmp<volScalarField> rho() const
+		{
+			 return rho_;
+		}
+
+		//- Returns const-access to mixture thermal conductivity
+		tmp<volScalarField> k() const
+		{
+			 return k_;
+		}
+
+		//- Returns const-access to mixture specific heat capacity at constant pressure
+		tmp<volScalarField> cp() const
+		{
+			 return cp_;
+		}
+
+        //- Correct the transport properties
         virtual void correct() override;
 
         //- Read base transportProperties dictionary

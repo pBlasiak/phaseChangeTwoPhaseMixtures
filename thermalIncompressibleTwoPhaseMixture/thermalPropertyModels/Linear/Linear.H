@@ -90,6 +90,13 @@ public:
 			th T2 = nullptr
 		) const override;
 
+        virtual tmp<volScalarField> calcThermProp
+		(
+			const thermalIncompressibleTwoPhaseMixture* titpm,
+			const volScalarField& T1,
+			const volScalarField& T2
+		) const override;
+
         //- Read the transportProperties dictionary and update
         virtual bool read();
 };

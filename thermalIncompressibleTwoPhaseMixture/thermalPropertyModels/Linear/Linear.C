@@ -64,9 +64,9 @@ Foam::thermalPropertyModels::Linear::Linear
 Foam::tmp<Foam::volScalarField> 
 Foam::thermalPropertyModels::Linear::calcThermProp
 (
-			const thermalIncompressibleTwoPhaseMixture* titpm,
-			th T1,
-			th T2 
+	const thermalIncompressibleTwoPhaseMixture* titpm,
+	th T1,
+	th T2 
 ) const
 {
 	const volScalarField limitedAlpha1
@@ -81,6 +81,30 @@ Foam::thermalPropertyModels::Linear::calcThermProp
             "thermProp",
             limitedAlpha1*(*titpm.*T1)()
           + (scalar(1) - limitedAlpha1)*(*titpm.*T2)()
+        )
+	);
+}
+
+Foam::tmp<Foam::volScalarField> 
+Foam::thermalPropertyModels::Linear::calcThermProp
+(
+	const thermalIncompressibleTwoPhaseMixture* titpm,
+	const volScalarField& T1,
+	const volScalarField& T2
+) const
+{
+	const volScalarField limitedAlpha1
+	(
+		min(max(titpm->alpha1(), scalar(0)), scalar(1))
+	);
+
+    return tmp<volScalarField>
+    (
+		new volScalarField
+        (
+            "thermProp",
+            limitedAlpha1*T1
+          + (scalar(1) - limitedAlpha1)*T2
         )
 	);
 }

@@ -134,6 +134,14 @@ public:
 			//const dimensionedScalar& T1,
 			//const dimensionedScalar& T2
 		) const = 0;
+		
+        //- Return the effective laminar thermal conductivity
+        virtual tmp<volScalarField> calcThermProp
+		(
+			const thermalIncompressibleTwoPhaseMixture* titpm,
+			const volScalarField& T1,
+			const volScalarField& T2
+		) const = 0;
 
         //- Read the transportProperties dictionary and update
         virtual bool read() = 0;
