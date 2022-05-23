@@ -55,7 +55,7 @@ Foam::thermalProperty::New
     );
 
     Info<< "Selecting "
-        << thermalPropertyTypeName << endl;
+        << thermalPropertyTypeName << " for " << thermProp << endl;
 
     componentsConstructorTable::iterator cstrIter =
         componentsConstructorTablePtr_
