@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "Linear.H"
+#include "LinearDensityWeighted.H"
 #include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -32,14 +32,14 @@ namespace Foam
 {
 namespace thermalPropertyModels
 {
-    defineTypeNameAndDebug(Linear, 0);
-    addToRunTimeSelectionTable(thermalProperty, Linear, components);
+    defineTypeNameAndDebug(LinearDensityWeighted, 0);
+    addToRunTimeSelectionTable(thermalProperty, LinearDensityWeighted, components);
 }
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::thermalPropertyModels::Linear::Linear
+Foam::thermalPropertyModels::LinearDensityWeighted::LinearDensityWeighted
 (
     const volVectorField& U,
     const surfaceScalarField& phi
@@ -53,7 +53,7 @@ Foam::thermalPropertyModels::Linear::Linear
     //mcCoeff_(Cc_*rho2()),
     //mvCoeff_(Cv_*rho1())
 {
-	//Info<< "Phase change relaxation time factors for the Linear model:\n" 
+	//Info<< "Phase change relaxation time factors for the LinearDensityWeighted model:\n" 
 	//	<< "Cc = " << Cc_ << endl
 	//	<< "Cv = " << Cv_ << endl;
 }
@@ -62,7 +62,7 @@ Foam::thermalPropertyModels::Linear::Linear
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 Foam::tmp<Foam::volScalarField> 
-Foam::thermalPropertyModels::Linear::calcThermProp
+Foam::thermalPropertyModels::LinearDensityWeighted::calcThermProp
 (
 	const thermalIncompressibleTwoPhaseMixture* titpm,
 	th T1,
@@ -74,19 +74,24 @@ Foam::thermalPropertyModels::Linear::calcThermProp
 		min(max(titpm->alpha1(), scalar(0)), scalar(1))
 	);
 
+	const dimensionedScalar rho1 = titpm->rho1();
+	const dimensionedScalar rho2 = titpm->rho2();
+
     return tmp<volScalarField>
     (
 		new volScalarField
         (
-            "linearThermProp",
-            limitedAlpha1*(*titpm.*T1)()
-          + (scalar(1) - limitedAlpha1)*(*titpm.*T2)()
+            "linearDensityWeightedThermProp",
+            (
+				limitedAlpha1*rho1*(*titpm.*T1)()
+              + (scalar(1) - limitedAlpha1)*rho2*(*titpm.*T2)()
+			)/(limitedAlpha1*rho1 + (scalar(1) - limitedAlpha1)*rho2)
         )
 	);
 }
 
 Foam::tmp<Foam::volScalarField> 
-Foam::thermalPropertyModels::Linear::calcThermProp
+Foam::thermalPropertyModels::LinearDensityWeighted::calcThermProp
 (
 	const thermalIncompressibleTwoPhaseMixture* titpm,
 	const volScalarField& T1,
@@ -98,18 +103,23 @@ Foam::thermalPropertyModels::Linear::calcThermProp
 		min(max(titpm->alpha1(), scalar(0)), scalar(1))
 	);
 
+	const dimensionedScalar rho1 = titpm->rho1();
+	const dimensionedScalar rho2 = titpm->rho2();
+
     return tmp<volScalarField>
     (
 		new volScalarField
         (
-            "linearThermProp",
-            limitedAlpha1*T1
-          + (scalar(1) - limitedAlpha1)*T2
+            "linearDensityWeightedThermProp",
+            (
+				limitedAlpha1*rho1*T1
+              + (scalar(1) - limitedAlpha1)*rho2*T2
+			)/(limitedAlpha1*rho1 + (scalar(1) - limitedAlpha1)*rho2)
         )
 	);
 }
 
-bool Foam::thermalPropertyModels::Linear::read()
+bool Foam::thermalPropertyModels::LinearDensityWeighted::read()
 {
     //if (thermalProperty::read())
     //{

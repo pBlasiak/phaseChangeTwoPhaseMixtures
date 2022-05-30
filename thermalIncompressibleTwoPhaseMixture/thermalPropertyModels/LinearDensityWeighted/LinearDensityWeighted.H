@@ -22,25 +22,19 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::thermalPropertyModels::Harmonic
+    Foam::thermalPropertyModels::LinearDensityWeighted
 
 Description
-    Harmonic thermal conductivity model for a mixture. 
-
-    Reference:
-    \verbatim
-	Cosden, Ian A., "A Hybrid Atomistic-Continuum Model for Liquid-Vapor Phase Change" (2013). 
-	Publicly Accessible Penn Dissertations. 846.  
-    https://repository.upenn.edu/edissertations/846
-    \endverbatim
+    LinearDensityWeighted thermal property model for a mixture. 
+	thermProp = alpha1*thermProp1 + alpha2*thermProp2
 
 SourceFiles
-    Harmonic.C
+    LinearDensityWeighted.C
 
 \*--------------------------------------------------------------------*/
 
-#ifndef Harmonic_H
-#define Harmonic_H
+#ifndef LinearDensityWeighted_H
+#define LinearDensityWeighted_H
 
 #include "thermalProperty.H"
 #include "thermalIncompressibleTwoPhaseMixture.H"
@@ -53,10 +47,10 @@ namespace thermalPropertyModels
 {
 
 /*--------------------------------------------------------------------*\
-                              Class Harmonic
+                              Class LinearDensityWeighted
 \*--------------------------------------------------------------------*/
 
-class Harmonic
+class LinearDensityWeighted
 :
     public thermalProperty
 {
@@ -65,20 +59,16 @@ class Harmonic
         //dimensionedScalar Cc_;
         //dimensionedScalar Cv_;
 
-        //dimensionedScalar mcCoeff_;
-        //dimensionedScalar mvCoeff_;
-
-
 public:
 
     //- Runtime type information
-    TypeName("harmonic");
+    TypeName("linearDensityWeighted");
 
 
     // Constructors
 
         //- construct from components
-        Harmonic
+        LinearDensityWeighted
         (
             const volVectorField& U,
             const surfaceScalarField& phi
@@ -86,7 +76,7 @@ public:
 
 
     //- Destructor
-    virtual ~Harmonic()
+    virtual ~LinearDensityWeighted()
     {}
 
 

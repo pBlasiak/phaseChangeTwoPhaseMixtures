@@ -30,25 +30,25 @@ License
 
 namespace Foam
 {
-namespace thermalConductivityModels
+namespace thermalPropertyModels
 {
     defineTypeNameAndDebug(Harmonic, 0);
-    addToRunTimeSelectionTable(thermalConductivity, Harmonic, components);
+    addToRunTimeSelectionTable(thermalProperty, Harmonic, components);
 }
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::thermalConductivityModels::Harmonic::Harmonic
+Foam::thermalPropertyModels::Harmonic::Harmonic
 (
     const volVectorField& U,
     const surfaceScalarField& phi
 )
 :
-    thermalConductivity(typeName, U, phi)
+    thermalProperty(typeName, U, phi)
 
-    //Cc_(thermalConductivityCoeffs_.subDict(type() + "Coeffs").lookup("Cc")),
-    //Cv_(thermalConductivityCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
+    //Cc_(thermalPropertyCoeffs_.subDict(type() + "Coeffs").lookup("Cc")),
+    //Cv_(thermalPropertyCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
 
     //mcCoeff_(Cc_*rho2()),
     //mvCoeff_(Cv_*rho1())
@@ -62,7 +62,12 @@ Foam::thermalConductivityModels::Harmonic::Harmonic
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 Foam::tmp<Foam::volScalarField> 
-Foam::thermalConductivityModels::Harmonic::k(const Foam::thermalIncompressibleTwoPhaseMixture* titpm) const
+Foam::thermalPropertyModels::Harmonic::calcThermProp
+(
+	const thermalIncompressibleTwoPhaseMixture* titpm,
+	th T1,
+	th T2 
+) const
 {
 	const volScalarField limitedAlpha1
 	(
@@ -73,24 +78,51 @@ Foam::thermalConductivityModels::Harmonic::k(const Foam::thermalIncompressibleTw
     (
 		new volScalarField
         (
-            "kHarmonic",
+            "harmonicThermProp",
 			scalar(1.0)/
 			(
-				(1.0/titpm->k1() - 1.0/titpm->k2())*limitedAlpha1
-			  + 1.0/titpm->k2()
+				(1.0/(*titpm.*T1)() - 1.0/(*titpm.*T2)())*limitedAlpha1
+			  + 1.0/(*titpm.*T2)()
 			)
         )
 	);
 }
 
-bool Foam::thermalConductivityModels::Harmonic::read()
+Foam::tmp<Foam::volScalarField> 
+Foam::thermalPropertyModels::Harmonic::calcThermProp
+(
+	const thermalIncompressibleTwoPhaseMixture* titpm,
+	const volScalarField& T1,
+	const volScalarField& T2
+) const
 {
-    //if (thermalConductivity::read())
-    //{
-        //thermalConductivityCoeffs_ = subDict(type() + "Coeffs");
+	const volScalarField limitedAlpha1
+	(
+		min(max(titpm->alpha1(), scalar(0)), scalar(1))
+	);
 
-        //thermalConductivityCoeffs_.lookup("Cc") >> Cc_;
-        //thermalConductivityCoeffs_.lookup("Cv") >> Cv_;
+    return tmp<volScalarField>
+    (
+		new volScalarField
+        (
+            "harmonicThermProp",
+			scalar(1.0)/
+			(
+				(1.0/T1 - 1.0/T2)*limitedAlpha1
+			  + 1.0/T2
+			)
+        )
+	);
+}
+
+bool Foam::thermalPropertyModels::Harmonic::read()
+{
+    //if (thermalProperty::read())
+    //{
+        //thermalPropertyCoeffs_ = subDict(type() + "Coeffs");
+
+        //thermalPropertyCoeffs_.lookup("Cc") >> Cc_;
+        //thermalPropertyCoeffs_.lookup("Cv") >> Cv_;
 
         //mcCoeff_ = Cc_*rho2();
         //mvCoeff_ = Cv_*rho1();
