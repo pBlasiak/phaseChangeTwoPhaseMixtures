@@ -140,12 +140,12 @@ public:
 		//- Calculates density of the mixture
 		void calcRho() 
 		{
-             rho_ = rhoModel_->calcThermProp
-			 (
-				this,
-				&thermalIncompressibleTwoPhaseMixture::rho1,
-				&thermalIncompressibleTwoPhaseMixture::rho2
-			 );
+            rho_ = rhoModel_->calcThermProp
+			(
+			   this,
+			   &thermalIncompressibleTwoPhaseMixture::rho1,
+			   &thermalIncompressibleTwoPhaseMixture::rho2
+			);
 		} 
 
         //- Calculates the effective laminar thermal conductivity
