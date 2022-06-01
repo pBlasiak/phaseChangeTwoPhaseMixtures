@@ -83,8 +83,37 @@ Foam::thermalPropertyModels::HarmonicDensityWeighted::calcThermProp
         (
             "harmonicDensityWeightedThermProp",
 			(
-				titpm->(*titpm.*T1)()*limitedAlpha1/rho1 
-			  - (scalar(1.0) - limitedAlpha1)*titpm->(*titpm.*T2)()/rho2 
+				(*titpm.*T1)()*limitedAlpha1/rho1 
+			  - (scalar(1.0) - limitedAlpha1)*(*titpm.*T2)()/rho2 
+			)/(limitedAlpha1/rho1 - (scalar(1.0) - limitedAlpha1)/rho2)
+        )
+	);
+}
+
+Foam::tmp<Foam::volScalarField> 
+Foam::thermalPropertyModels::HarmonicDensityWeighted::calcThermProp
+(
+	const thermalIncompressibleTwoPhaseMixture* titpm,
+	const volScalarField& T1,
+	const volScalarField& T2
+) const
+{
+	const volScalarField limitedAlpha1
+	(
+		min(max(titpm->alpha1(), scalar(0)), scalar(1))
+	);
+
+	const dimensionedScalar rho1 = titpm->rho1();
+	const dimensionedScalar rho2 = titpm->rho2();
+
+    return tmp<volScalarField>
+    (
+		new volScalarField
+        (
+            "harmonicDensityWeightedThermProp",
+			(
+				T1*limitedAlpha1/rho1 
+			  - (scalar(1.0) - limitedAlpha1)*T2/rho2 
 			)/(limitedAlpha1/rho1 - (scalar(1.0) - limitedAlpha1)/rho2)
         )
 	);
