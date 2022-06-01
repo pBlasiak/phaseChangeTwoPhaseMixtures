@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::thermalConductivityModels::HarmonicDensityWeighted
+    Foam::thermalPropertyModels::HarmonicDensityWeighted
 
 Description
     HarmonicDensityWeighted thermal conductivity model for a mixture. 
@@ -42,14 +42,14 @@ SourceFiles
 #ifndef HarmonicDensityWeighted_H
 #define HarmonicDensityWeighted_H
 
-#include "thermalConductivity.H"
+#include "thermalProperty.H"
 #include "thermalIncompressibleTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * * * *  * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
-namespace thermalConductivityModels
+namespace thermalPropertyModels
 {
 
 /*--------------------------------------------------------------------*\
@@ -58,7 +58,7 @@ namespace thermalConductivityModels
 
 class HarmonicDensityWeighted
 :
-    public thermalConductivity
+    public thermalProperty
 {
     // Private data
 
@@ -92,8 +92,20 @@ public:
 
     // Member Functions
 	
-        //- Return the effective laminar thermal conductivity
-        virtual tmp<volScalarField> k(const thermalIncompressibleTwoPhaseMixture* titpm) const override;
+        //- Return the effective laminar thermal property
+        virtual tmp<volScalarField> calcThermProp
+		(
+			const thermalIncompressibleTwoPhaseMixture* titpm,
+			th T1 = nullptr, 
+			th T2 = nullptr
+		) const override;
+
+        virtual tmp<volScalarField> calcThermProp
+		(
+			const thermalIncompressibleTwoPhaseMixture* titpm,
+			const volScalarField& T1,
+			const volScalarField& T2
+		) const override;
 
         //- Read the transportProperties dictionary and update
         virtual bool read();
@@ -102,7 +114,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace thermalConductivityModels
+} // End namespace thermalPropertyModels
 } // End namespace Foam
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -30,25 +30,25 @@ License
 
 namespace Foam
 {
-namespace thermalConductivityModels
+namespace thermalPropertyModels
 {
     defineTypeNameAndDebug(HarmonicDensityWeighted, 0);
-    addToRunTimeSelectionTable(thermalConductivity, HarmonicDensityWeighted, components);
+    addToRunTimeSelectionTable(thermalProperty, HarmonicDensityWeighted, components);
 }
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::thermalConductivityModels::HarmonicDensityWeighted::HarmonicDensityWeighted
+Foam::thermalPropertyModels::HarmonicDensityWeighted::HarmonicDensityWeighted
 (
     const volVectorField& U,
     const surfaceScalarField& phi
 )
 :
-    thermalConductivity(typeName, U, phi)
+    thermalProperty(typeName, U, phi)
 
-    //Cc_(thermalConductivityCoeffs_.subDict(type() + "Coeffs").lookup("Cc")),
-    //Cv_(thermalConductivityCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
+    //Cc_(thermalPropertyCoeffs_.subDict(type() + "Coeffs").lookup("Cc")),
+    //Cv_(thermalPropertyCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
 
     //mcCoeff_(Cc_*rho2()),
     //mvCoeff_(Cv_*rho1())
@@ -62,34 +62,42 @@ Foam::thermalConductivityModels::HarmonicDensityWeighted::HarmonicDensityWeighte
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 Foam::tmp<Foam::volScalarField> 
-Foam::thermalConductivityModels::HarmonicDensityWeighted::k(const Foam::thermalIncompressibleTwoPhaseMixture* titpm) const
+Foam::thermalPropertyModels::HarmonicDensityWeighted::calcThermProp
+(
+	const thermalIncompressibleTwoPhaseMixture* titpm,
+	th T1,
+	th T2 
+) const
 {
 	const volScalarField limitedAlpha1
 	(
 		min(max(titpm->alpha1(), scalar(0)), scalar(1))
 	);
 
+	const dimensionedScalar rho1 = titpm->rho1();
+	const dimensionedScalar rho2 = titpm->rho2();
+
     return tmp<volScalarField>
     (
 		new volScalarField
         (
-            "kHarmonicDensityWeighted",
+            "harmonicDensityWeightedThermProp",
 			(
-				titpm->k1()*limitedAlpha1/titpm->rho1() 
-			  - (scalar(1.0) - limitedAlpha1)*titpm->k2()/titpm->rho2() 
-			)/(limitedAlpha1/titpm->rho1() - (scalar(1.0) - limitedAlpha1)/titpm->rho2())
+				titpm->(*titpm.*T1)()*limitedAlpha1/rho1 
+			  - (scalar(1.0) - limitedAlpha1)*titpm->(*titpm.*T2)()/rho2 
+			)/(limitedAlpha1/rho1 - (scalar(1.0) - limitedAlpha1)/rho2)
         )
 	);
 }
 
-bool Foam::thermalConductivityModels::HarmonicDensityWeighted::read()
+bool Foam::thermalPropertyModels::HarmonicDensityWeighted::read()
 {
-    //if (thermalConductivity::read())
+    //if (thermalProperty::read())
     //{
-        //thermalConductivityCoeffs_ = subDict(type() + "Coeffs");
+        //thermalPropertyCoeffs_ = subDict(type() + "Coeffs");
 
-        //thermalConductivityCoeffs_.lookup("Cc") >> Cc_;
-        //thermalConductivityCoeffs_.lookup("Cv") >> Cv_;
+        //thermalPropertyCoeffs_.lookup("Cc") >> Cc_;
+        //thermalPropertyCoeffs_.lookup("Cv") >> Cv_;
 
         //mcCoeff_ = Cc_*rho2();
         //mvCoeff_ = Cv_*rho1();
