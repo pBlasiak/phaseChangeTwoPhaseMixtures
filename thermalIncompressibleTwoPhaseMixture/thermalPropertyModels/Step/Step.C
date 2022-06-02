@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "HarmonicDensityWeighted.H"
+#include "Step.H"
 #include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -32,14 +32,14 @@ namespace Foam
 {
 namespace thermalPropertyModels
 {
-    defineTypeNameAndDebug(HarmonicDensityWeighted, 0);
-    addToRunTimeSelectionTable(thermalProperty, HarmonicDensityWeighted, components);
+    defineTypeNameAndDebug(Step, 0);
+    addToRunTimeSelectionTable(thermalProperty, Step, components);
 }
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::thermalPropertyModels::HarmonicDensityWeighted::HarmonicDensityWeighted
+Foam::thermalPropertyModels::Step::Step
 (
     const volVectorField& U,
     const surfaceScalarField& phi
@@ -53,7 +53,7 @@ Foam::thermalPropertyModels::HarmonicDensityWeighted::HarmonicDensityWeighted
     //mcCoeff_(Cc_*rho2()),
     //mvCoeff_(Cv_*rho1())
 {
-	//Info<< "Phase change relaxation time factors for the HarmonicDensityWeighted model:\n" 
+	//Info<< "Phase change relaxation time factors for the Step model:\n" 
 	//	<< "Cc = " << Cc_ << endl
 	//	<< "Cv = " << Cv_ << endl;
 }
@@ -62,7 +62,7 @@ Foam::thermalPropertyModels::HarmonicDensityWeighted::HarmonicDensityWeighted
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 Foam::tmp<Foam::volScalarField> 
-Foam::thermalPropertyModels::HarmonicDensityWeighted::calcThermProp
+Foam::thermalPropertyModels::Step::calcThermProp
 (
 	const thermalIncompressibleTwoPhaseMixture* titpm,
 	th T1,
@@ -74,26 +74,39 @@ Foam::thermalPropertyModels::HarmonicDensityWeighted::calcThermProp
 		min(max(titpm->alpha1(), scalar(0)), scalar(1))
 	);
 
-	const dimensionedScalar rho1 = titpm->rho1();
-	const dimensionedScalar rho2 = titpm->rho2();
 	const dimensionedScalar thpr1 = (*titpm.*T1)();
 	const dimensionedScalar thpr2 = (*titpm.*T2)();
 
+	volScalarField thPr
+	(
+        IOobject
+        (
+            "thPr",
+            U_.time().timeName(),
+            U_.db(),
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+        ),
+        U_.mesh(),
+		thpr1
+	);
+
+	forAll(limitedAlpha1, celli)
+	{
+		if (limitedAlpha1[celli] < 0.5)
+		{
+			thPr[celli] = thpr2.value(); 
+		}
+	}
+
     return tmp<volScalarField>
     (
-		new volScalarField
-        (
-            "harmonicDensityWeightedThermProp",
-			(
-				thpr1*limitedAlpha1/rho1 
-			  - (scalar(1.0) - limitedAlpha1)*thpr2/rho2 
-			)/(limitedAlpha1/rho1 - (scalar(1.0) - limitedAlpha1)/rho2)
-        )
+		new volScalarField(thPr)
 	);
 }
 
 Foam::tmp<Foam::volScalarField> 
-Foam::thermalPropertyModels::HarmonicDensityWeighted::calcThermProp
+Foam::thermalPropertyModels::Step::calcThermProp
 (
 	const thermalIncompressibleTwoPhaseMixture* titpm,
 	const volScalarField& T1,
@@ -105,23 +118,34 @@ Foam::thermalPropertyModels::HarmonicDensityWeighted::calcThermProp
 		min(max(titpm->alpha1(), scalar(0)), scalar(1))
 	);
 
-	const dimensionedScalar rho1 = titpm->rho1();
-	const dimensionedScalar rho2 = titpm->rho2();
+	volScalarField thPr
+	(
+        IOobject
+        (
+            "thPr",
+            U_.time().timeName(),
+            U_.db(),
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+        ),
+		T1
+	);
+
+	forAll(limitedAlpha1, celli)
+	{
+		if (limitedAlpha1[celli] < 0.5)
+		{
+			thPr[celli] = T2[celli];
+		}
+	}
 
     return tmp<volScalarField>
     (
-		new volScalarField
-        (
-            "harmonicDensityWeightedThermProp",
-			(
-				T1*limitedAlpha1/rho1 
-			  - (scalar(1.0) - limitedAlpha1)*T2/rho2 
-			)/(limitedAlpha1/rho1 - (scalar(1.0) - limitedAlpha1)/rho2)
-        )
+		new volScalarField(thPr)
 	);
 }
 
-bool Foam::thermalPropertyModels::HarmonicDensityWeighted::read()
+bool Foam::thermalPropertyModels::Step::read()
 {
     //if (thermalProperty::read())
     //{

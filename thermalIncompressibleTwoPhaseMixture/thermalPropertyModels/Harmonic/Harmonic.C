@@ -74,6 +74,9 @@ Foam::thermalPropertyModels::Harmonic::calcThermProp
 		min(max(titpm->alpha1(), scalar(0)), scalar(1))
 	);
 
+	const dimensionedScalar thpr1 = (*titpm.*T1)();
+	const dimensionedScalar thpr2 = (*titpm.*T2)();
+
     return tmp<volScalarField>
     (
 		new volScalarField
@@ -81,8 +84,8 @@ Foam::thermalPropertyModels::Harmonic::calcThermProp
             "harmonicThermProp",
 			scalar(1.0)/
 			(
-				(1.0/(*titpm.*T1)() - 1.0/(*titpm.*T2)())*limitedAlpha1
-			  + 1.0/(*titpm.*T2)()
+				(1.0/thpr1 - 1.0/thpr2)*limitedAlpha1
+			  +  1.0/thpr2
 			)
         )
 	);
@@ -109,7 +112,7 @@ Foam::thermalPropertyModels::Harmonic::calcThermProp
 			scalar(1.0)/
 			(
 				(1.0/T1 - 1.0/T2)*limitedAlpha1
-			  + 1.0/T2
+			  +  1.0/T2
 			)
         )
 	);

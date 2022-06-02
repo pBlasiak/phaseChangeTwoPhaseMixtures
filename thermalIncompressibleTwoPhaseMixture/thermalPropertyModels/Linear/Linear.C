@@ -74,13 +74,16 @@ Foam::thermalPropertyModels::Linear::calcThermProp
 		min(max(titpm->alpha1(), scalar(0)), scalar(1))
 	);
 
+	const dimensionedScalar thpr1 = (*titpm.*T1)();
+	const dimensionedScalar thpr2 = (*titpm.*T2)();
+
     return tmp<volScalarField>
     (
 		new volScalarField
         (
             "linearThermProp",
-            limitedAlpha1*(*titpm.*T1)()
-          + (scalar(1) - limitedAlpha1)*(*titpm.*T2)()
+            limitedAlpha1*thpr1
+          + (scalar(1) - limitedAlpha1)*thpr2
         )
 	);
 }

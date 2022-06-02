@@ -76,6 +76,8 @@ Foam::thermalPropertyModels::LinearDensityWeighted::calcThermProp
 
 	const dimensionedScalar rho1 = titpm->rho1();
 	const dimensionedScalar rho2 = titpm->rho2();
+	const dimensionedScalar thpr1 = (*titpm.*T1)();
+	const dimensionedScalar thpr2 = (*titpm.*T2)();
 
     return tmp<volScalarField>
     (
@@ -83,8 +85,8 @@ Foam::thermalPropertyModels::LinearDensityWeighted::calcThermProp
         (
             "linearDensityWeightedThermProp",
             (
-				limitedAlpha1*rho1*(*titpm.*T1)()
-              + (scalar(1) - limitedAlpha1)*rho2*(*titpm.*T2)()
+				limitedAlpha1*rho1*thpr1
+              + (scalar(1) - limitedAlpha1)*rho2*thpr2
 			)/(limitedAlpha1*rho1 + (scalar(1) - limitedAlpha1)*rho2)
         )
 	);
