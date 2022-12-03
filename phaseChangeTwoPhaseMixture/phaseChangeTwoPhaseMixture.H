@@ -70,9 +70,13 @@ private:
 		//  default is true
 		Switch HW_;
 
-        //- Spread for mass source
+        //- Cutoff for mass source
 		//  default is 1e-3
         scalar cutoff_;
+
+        //- Spread for mass source
+		//  default is 3
+        scalar spread_;
 
 		//- Flag for the limited alphal calculation
 		Switch limitedAlphalCalculated_;

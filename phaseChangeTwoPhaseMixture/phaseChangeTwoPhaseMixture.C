@@ -74,6 +74,7 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	),
 	HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HardtWondra", true)),
 	cutoff_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("cutoff", 1e-3)),
+	spread_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("spread", 3)),
 	limitedAlphalCalculated_(false),
 	magGradLimitedAlphalCalculated_(false),
     //cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
@@ -270,6 +271,7 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	Info<< "Condensation is " << cond_	 << endl;
 	Info<< "Evaporation is "  << evap_   << endl;
 	Info<< "Hardt-Wondra algorithm is: " << HW_ << endl;
+	Info<< "Spread is set as: "          << spread_ << endl;
 	Info<< "Cutoff is set as: "          << cutoff_ << endl;
 }
 
@@ -310,7 +312,7 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 		(
 		    "DPsi",
 		    dimArea,
-		    cutoff_/sqr(gAverage(T_.mesh().nonOrthDeltaCoeffs()))
+		    spread_/sqr(gAverage(T_.mesh().nonOrthDeltaCoeffs()))
 		);
 
 		dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphal_);
@@ -576,6 +578,7 @@ bool Foam::phaseChangeTwoPhaseMixture::read()
         lookup("printPhaseChange") >> printPhaseChange_;
         lookup("HardtWondra") >> HW_;
         lookup("cutoff") >> cutoff_;
+        lookup("spread") >> spread_;
         lookup("condensation") >> cond_;
         lookup("evaporation") >> evap_;
 
