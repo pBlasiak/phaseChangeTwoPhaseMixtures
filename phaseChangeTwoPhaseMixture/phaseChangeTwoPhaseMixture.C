@@ -74,7 +74,7 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	),
 	HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HardtWondra", true)),
 	cutoff_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("cutoff", 1e-3)),
-	spread_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("spread", 3)),
+	spread_(phaseChangeTwoPhaseMixtureCoeffs_.getOrDefault<scalar>("spread", 3)),
 	limitedAlphalCalculated_(false),
 	magGradLimitedAlphalCalculated_(false),
     //cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
