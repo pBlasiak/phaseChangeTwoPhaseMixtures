@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${FOAM_SRC}/**",
+                "${WM_PROJECT_USER_DIR}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++11"
+        }
+    ],
+    "version": 4
+}
