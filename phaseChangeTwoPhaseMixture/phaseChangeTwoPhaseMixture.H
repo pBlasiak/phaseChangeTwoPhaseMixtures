@@ -42,6 +42,7 @@ SourceFiles
 #include "dimensionedScalar.H"
 #include "autoPtr.H"
 #include "Pair.H"
+#include "HardtWondra.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -68,15 +69,11 @@ private:
 	
 	    //- Hardt-Wondra algorithm activation
 		//  default is true
-		Switch HW_;
+		Switch isHW_;
 
-        //- Cutoff for mass source
-		//  default is 1e-3
-        scalar cutoff_;
+		//- Pointer to Hardt-Wondra algorithm
+		autoPtr<HardtWondra> HW_;
 
-        //- Spread for mass source
-		//  default is 3
-        scalar spread_;
 
 		//- Flag for the limited alphal calculation
 		Switch limitedAlphalCalculated_;
@@ -87,17 +84,15 @@ private:
     // Private Member Functions
 
         //- Disallow copy construct
-        phaseChangeTwoPhaseMixture(const phaseChangeTwoPhaseMixture&);
+        phaseChangeTwoPhaseMixture(const phaseChangeTwoPhaseMixture&) = delete;
 
         //- Disallow default bitwise assignment
-        void operator=(const phaseChangeTwoPhaseMixture&);
+        void operator=(const phaseChangeTwoPhaseMixture&) = delete;
 
 
 protected:
 
     // Protected data
-
-        //dictionary phaseChangeTwoPhaseMixtureCoeffs_;
 
     	Switch cond_;
 
@@ -156,8 +151,6 @@ protected:
         //- Latent heat of vaporization
         dimensionedScalar hEvap_;
 
-        //- Specific gas constant
-        dimensionedScalar R_;
 
 		//-True if saturation vapour temperature is based on pressure
 		Switch TSatLocalPressure_;

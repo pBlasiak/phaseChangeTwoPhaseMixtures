@@ -79,7 +79,7 @@ Foam::phaseChangeTwoPhaseMixtures::Lee::mDotP() const
 	 // implicit implementation results in zero velocity at the interface
         //mCondAlphal_*pos(p_-pSat_)/max(p_-pSat_,1E-6*pSat_),
 	    //mEvapAlphal_*neg(p_-pSat_)/max(pSat_-p_,1E-6*pSat_)
-        mCondAlphal_,
+        -mCondAlphal_,
 	    mEvapAlphal_
 	);
 }

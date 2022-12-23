@@ -28,15 +28,7 @@ License
 #include "fvm.H"
 #include "mathematicalConstants.H"
 #include "addToRunTimeSelectionTable.H"
-
 #include "volFields.H"
-//#include "FaceCellWave.H"
-//#include "smoothData.H"
-//#include "sweepData.H"
-//#include "fvMatrices.H"
-//#include "fvcVolumeIntegrate.H"
-//#include "fvmLaplacian.H"
-//#include "fvmSup.H"
 #include "zeroGradientFvPatchField.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -72,13 +64,9 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
             )
 	    )
 	),
-	HW_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("HardtWondra", true)),
-	cutoff_(phaseChangeTwoPhaseMixtureCoeffs_.lookupOrDefault("cutoff", 1e-3)),
-	spread_(phaseChangeTwoPhaseMixtureCoeffs_.getOrDefault<scalar>("spread", 3)),
+	isHW_(phaseChangeTwoPhaseMixtureCoeffs_.getOrDefault<Switch>("HardtWondra", true)),
 	limitedAlphalCalculated_(false),
 	magGradLimitedAlphalCalculated_(false),
-    //cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
-    //evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
     cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_),
     evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_),
 	limitedAlphal_(min(max(alpha1(), scalar(0)), scalar(1))),
@@ -257,22 +245,18 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
     ),
     pSat_("pSat", dimPressure, phaseChangeTwoPhaseMixtureCoeffs_),
     hEvap_("hEvap", dimEnergy/dimMass, phaseChangeTwoPhaseMixtureCoeffs_),
-    R_("R", dimGasConstant, phaseChangeTwoPhaseMixtureCoeffs_),
     TSatLocalPressure_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("TSatLocalPressure"))),
 	printPhaseChange_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("printPhaseChange")))
 {
 	Info<< "TSatGlobal = "				 << TSatG_ << endl;
 	Info<< "pSat = "		  			 << pSat_ << endl;
 	Info<< "hEvap = "		  			 << hEvap_ << endl;
-	Info<< "R = "			  			 << R_ << endl;
 	Info<< "TSatLocalPressure = "        << TSatLocalPressure_ << endl;
 	Info<< "printPhaseChange = "         << printPhaseChange_ << endl;
 
 	Info<< "Condensation is " << cond_	 << endl;
 	Info<< "Evaporation is "  << evap_   << endl;
-	Info<< "Hardt-Wondra algorithm is: " << HW_ << endl;
-	Info<< "Spread is set as: "          << spread_ << endl;
-	Info<< "Cutoff is set as: "          << cutoff_ << endl;
+	Info<< "Hardt-Wondra algorithm is: " << isHW_ << endl;
 }
 
 
@@ -305,6 +289,7 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 	}
 	else
 	{
+		// 1) Calculate |grad(alphal)|
 		calcMagGradLimitedAlphal();
 
 		//- Smearing of source term field
@@ -315,9 +300,11 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 		    spread_/sqr(gAverage(T_.mesh().nonOrthDeltaCoeffs()))
 		);
 
+		// 2) volume integral from |grad(alphal)|
 		dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphal_);
-		dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate((limitedAlphal_)*magGradLimitedAlphal_);
+		dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate(limitedAlphal_*magGradLimitedAlphal_);
 			
+		// 4) calculate N
 		dimensionedScalar N("N", dimensionSet(0,0,0,0,0,0,0), 2.0);
 		if (intAlphaPsi0Tild.value() > 1e-99)
 		{
@@ -326,9 +313,10 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 
 		if (cond_)
 		{
-			//mCondAlphal_   *= N; // According to HW it should be like this
-			                       // but it gives slightly higher errors if uncommentd
-			mCondNoAlphal_ *= N;
+			// 5) phi0
+			mCondAlphal_   *= N; // According to HW it should be like this
+			//                       // but it gives slightly higher errors if uncommentd
+			//mCondNoAlphal_ *= N;
 			mCondNoTmTSat_ *= N;
 
 			dimensionedScalar intPsi0l = fvc::domainIntegrate(mCondAlphal_);
@@ -349,6 +337,7 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 			    zeroGradientFvPatchField<scalar>::typeName
 			);
 			
+			// 6) Solve Helmholtz equation
 			fvScalarMatrix psilEqn
 			(
 				fvm::Sp(scalar(1),psil) - fvm::laplacian(DPsi,psil) == mCondAlphal_
@@ -372,8 +361,10 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 					intPsiLiquidCondensation.value() += (limitedAlphal_[iCell])*psil[iCell]*mesh.V()[iCell];
 				}
 			}
+
+			dimensionedScalar intPsil = fvc::domainIntegrate(psil);
 			
-			//- Calculate Nl and Nv
+			//- 7) Calculate Nl and Nv
 			dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
 			dimensionedScalar Nv ("Nv", dimensionSet(0,0,0,0,0,0,0), 2.0);
 			
@@ -390,16 +381,18 @@ void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
 			}
 			
 			        
-			//- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
+			//- 8) Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
 			forAll(mesh.C(),iCell)
 			{
 				if (limitedAlphal_[iCell] < cutoff_)
 				{
 					mCondAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psil[iCell];
+					//mCondNoTmTSat_[iCell] += -Nv.value()*(1.0-limitedAlphal_[iCell])*psil[iCell]*cp2_.value()*T_[iCell]/hEvap_.value();
 				}
 				else if (limitedAlphal_[iCell] > 1.0-cutoff_)
 				{
 					mCondAlphal_[iCell] = Nl.value()*(limitedAlphal_[iCell])*psil[iCell];
+					//mCondNoTmTSat_[iCell] += Nl.value()*(limitedAlphal_[iCell])*psil[iCell]*cp1_.value()*T_[iCell]/hEvap_.value();
 				}
 				else
 				{

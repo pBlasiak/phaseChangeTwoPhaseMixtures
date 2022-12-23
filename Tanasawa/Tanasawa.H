@@ -65,11 +65,19 @@ class Tanasawa
     // Private data
 
 
+		//- Accomodation coefficient
     	dimensionedScalar gamma_;
 
+        //- Specific gas constant
+        dimensionedScalar R_;
+
+		//- Constant part of the model coefficients
         dimensionedScalar mCoeff_;
+
 		
     // Private member functions
+	
+		//-
 
 
 public:

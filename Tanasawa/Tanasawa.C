@@ -31,13 +31,6 @@ License
 #include "addToRunTimeSelectionTable.H"
 
 #include "volFields.H"
-//#include "FaceCellWave.H"
-//#include "smoothData.H"
-//#include "sweepData.H"
-//#include "fvMatrices.H"
-//#include "fvcVolumeIntegrate.H"
-//#include "fvmLaplacian.H"
-//#include "fvmSup.H"
 #include "zeroGradientFvPatchField.H"
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -62,10 +55,12 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::Tanasawa
     phaseChangeTwoPhaseMixture(typeName, U, phi),
 
     gamma_("gamma", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
+    R_("R", dimGasConstant, phaseChangeTwoPhaseMixtureCoeffs_),
    	mCoeff_(2.0*gamma_/(2.0 - gamma_)/sqrt(2.0*M_PI*R_)*hEvap_*rho2())
 {
 	Info<< "Tanasawa model settings:  " << endl;
 	Info<< "gamma = "		  << gamma_ << endl;
+	Info<< "R = "             << R_     << endl;
 }
 
 
@@ -76,7 +71,7 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotAlphal() const
 {
 	return Pair<tmp<volScalarField>>
 	(
-		tmp<volScalarField>(mCondNoAlphal_),
+		tmp<volScalarField>(-mCondAlphal_),
 		tmp<volScalarField>(mEvapNoAlphal_)
     );
 }
