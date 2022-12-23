@@ -88,6 +88,17 @@ class HardtWondra
 		//  default is 3
         scalar spread_;
 
+		//- Flag for the limited alphal calculation
+		Switch limitedAlphalCalculated_;
+
+		//- Flag for the magGradLimitedAlphal calculation
+		Switch magGradLimitedAlphalCalculated_;
+
+		//- Limited liquid void fraction between 0 and 1 
+		volScalarField limitedAlphal_;
+
+		//- Gradient magnitude of limited alphal
+		volScalarField magGradLimitedAlphal_;
 
     // Private Member Functions
 
@@ -96,6 +107,12 @@ class HardtWondra
 
         //- No copy assignment
         void operator=(const HardtWondra&) = delete;
+
+		//- Calculates limited alphal
+		void calcLimitedAlphal();
+
+		//- Calculates magnitude of gradient of limited alphal
+		void calcMagGradLimitedAlphal();
 
 
 public:

@@ -74,13 +74,6 @@ private:
 		//- Pointer to Hardt-Wondra algorithm
 		autoPtr<HardtWondra> HW_;
 
-
-		//- Flag for the limited alphal calculation
-		Switch limitedAlphalCalculated_;
-
-		//- Flag for the magGradLimitedAlphal calculation
-		Switch magGradLimitedAlphalCalculated_;
-
     // Private Member Functions
 
         //- Disallow copy construct
@@ -97,12 +90,6 @@ protected:
     	Switch cond_;
 
     	Switch evap_;
-
-		//- Limited liquid void fraction between 0 and 1 
-		volScalarField limitedAlphal_;
-
-		//- Gradient magnitude of limited alphal
-		volScalarField magGradLimitedAlphal_;
 
 		//- Condensation mass flux, kg/s (+)
 		volScalarField mCond_;
@@ -139,6 +126,7 @@ protected:
         //- Reference to temperature field
         const volScalarField& T_;
 
+		//TSAT DATA SHOULD BE MOVED TO SEPARATE CLASS
         //- Global saturation temperature
         dimensionedScalar TSatG_;
 		
@@ -162,17 +150,10 @@ protected:
 		//  using simplified Clausius-Clapeyron equation 
 		void calcTSatLocal();
 
-		//- Calculates limited alphal
-		void calcLimitedAlphal();
-
-		//- Calculates magnitude of gradient of limited alphal
-		void calcMagGradLimitedAlphal();
-
 public:
 
     //- Runtime type information
     TypeName("phaseChangeTwoPhaseMixture");
-
 
     // Declare run-time constructor selection table
 
