@@ -104,6 +104,11 @@ public:
 
     // Member Functions
 
+        //- Return const-access to the specific gas constant
+        const dimensionedScalar& R() const
+        {
+            return R_;
+        }
 
         //- Return the volumetric mass condensation (+) and vaporisation (-) rates 
 		//  as a coefficient to multiply by (1 - alphal) for the condensation rate

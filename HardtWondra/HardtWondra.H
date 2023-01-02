@@ -80,6 +80,15 @@ class HardtWondra
 
 		dictionary HWdict_;
 
+		//- Flag if condensation enabled
+    	Switch cond_;
+
+		//- Flag if evaporation enabled
+    	Switch evap_;
+
+        //- Reference to liquid void fraction field
+        const volScalarField& alphalRef_;
+
         //- Cutoff for mass source
 		//  default is 1e-3
         scalar cutoff_;
@@ -87,12 +96,6 @@ class HardtWondra
         //- Spread for mass source
 		//  default is 3
         scalar spread_;
-
-		//- Flag for the limited alphal calculation
-		Switch limitedAlphalCalculated_;
-
-		//- Flag for the magGradLimitedAlphal calculation
-		Switch magGradLimitedAlphalCalculated_;
 
 		//- Limited liquid void fraction between 0 and 1 
 		volScalarField limitedAlphal_;
@@ -155,6 +158,15 @@ public:
 
 
     // Member Functions
+	    //- Hardt-Wondra algorithm
+		//  current implementation is:
+		//  - no spread mass source terms in alphaEqn
+		//  - spread mass source terms in pEqn
+		//  - no spread mass source terms in TEqn
+		//  Additionally in TEqn mass source term the correction
+		//  term h_c is ommited (Eq. (23)) because it gives 
+		//  worse results
+		void spread();
 
     // Access
 

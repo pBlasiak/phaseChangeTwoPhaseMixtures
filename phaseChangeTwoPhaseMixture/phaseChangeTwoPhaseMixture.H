@@ -42,6 +42,7 @@ SourceFiles
 #include "dimensionedScalar.H"
 #include "autoPtr.H"
 #include "Pair.H"
+#include "SaturationProperties.H"
 #include "HardtWondra.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -71,6 +72,9 @@ private:
 		//  default is true
 		Switch isHW_;
 
+		//- Pointer to saturation properties
+		autoPtr<SaturationProperties> satProps_;
+
 		//- Pointer to Hardt-Wondra algorithm
 		autoPtr<HardtWondra> HW_;
 
@@ -87,9 +91,11 @@ protected:
 
     // Protected data
 
-    	Switch cond_;
-
-    	Switch evap_;
+		//- Condensation mass flux, kg/(m2 s) (+)
+		volScalarField jc_;
+		
+		//- Evaporation mass flux, kg/(m2 s) (+)
+		volScalarField je_;
 
 		//- Condensation mass flux, kg/s (+)
 		volScalarField mCond_;
@@ -120,36 +126,8 @@ protected:
 		volScalarField mCondT_;
 		volScalarField mEvapT_;
 
-        //- Reference to pressure field
-        const volScalarField& p_;
-
-        //- Reference to temperature field
-        const volScalarField& T_;
-
-		//TSAT DATA SHOULD BE MOVED TO SEPARATE CLASS
-        //- Global saturation temperature
-        dimensionedScalar TSatG_;
-		
-        //- Local saturation temperature
-        volScalarField TSat_;
-
-        //- Saturation vapour pressure
-        dimensionedScalar pSat_;
-
-        //- Latent heat of vaporization
-        dimensionedScalar hEvap_;
-
-
-		//-True if saturation vapour temperature is based on pressure
-		Switch TSatLocalPressure_;
-
 		Switch printPhaseChange_;
 		
-
-		//- Calculates local saturation temperature field based on pressure
-		//  using simplified Clausius-Clapeyron equation 
-		void calcTSatLocal();
-
 public:
 
     //- Runtime type information
@@ -198,15 +176,6 @@ public:
 
     // Member Functions
 	
-	    //- Hardt-Wondra algorithm
-		//  current implementation is:
-		//  - no spread mass source terms in alphaEqn
-		//  - spread mass source terms in pEqn
-		//  - no spread mass source terms in TEqn
-		//  Additionally in TEqn mass source term the correction
-		//  term h_c is ommited (Eq. (23)) because it gives 
-		//  worse results
-		void HardtWondra();
 
         //- Return const-access to the condensation mass flux
         const volScalarField& mCond() const
@@ -224,36 +193,6 @@ public:
         const volScalarField& mEvapNoAlphal() const
         {
             return mEvapNoAlphal_;
-        }
-
-        //- Return const-access to the global saturation temperature
-        const dimensionedScalar& TSatG() const
-        {
-            return TSatG_;
-        }
-		
-        //- Return const-access to the local saturation temperature
-        const volScalarField& TSat() const
-        {
-            return TSat_;
-        }
-
-        //- Return const-access to the global saturation vapour pressure
-        const dimensionedScalar& pSat() const
-        {
-            return pSat_;
-        }
-
-        //- Return const-access to the latent heat of vaporization
-        const dimensionedScalar& hEvap() const
-        {
-            return hEvap_;
-        }
-
-        //- Return const-access to the specific gas constant
-        const dimensionedScalar& R() const
-        {
-            return R_;
         }
 
         //- Return the volumetric mass condensation (+) and vaporisation (-) rates 

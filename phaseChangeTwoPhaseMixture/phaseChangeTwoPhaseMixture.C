@@ -49,7 +49,6 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 )
 :
     thermalIncompressibleTwoPhaseMixture(U, phi),
-    //phaseChangeTwoPhaseMixtureCoeffs_(subDict(type + "Coeffs")),
     phaseChangeTwoPhaseMixtureCoeffs_
 	(
 	    IOdictionary
@@ -65,12 +64,42 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	    )
 	),
 	isHW_(phaseChangeTwoPhaseMixtureCoeffs_.getOrDefault<Switch>("HardtWondra", true)),
-	limitedAlphalCalculated_(false),
-	magGradLimitedAlphalCalculated_(false),
-    cond_("condensation", phaseChangeTwoPhaseMixtureCoeffs_),
-    evap_("evaporation", phaseChangeTwoPhaseMixtureCoeffs_),
-	limitedAlphal_(min(max(alpha1(), scalar(0)), scalar(1))),
-	magGradLimitedAlphal_(mag(fvc::grad(limitedAlphal_))),
+    satProps_
+    (
+        SaturationProperties::New
+        (
+            U,
+            phi, 
+			phaseChangeTwoPhaseMixtureCoeffs_.get<word>("satPropModel")
+        )
+    ),
+    HW_(new HardtWondra(alpha1())),
+    jc_
+    (
+        IOobject
+        (
+            "jc",
+            U.time().timeName(),
+            U.db(),
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+        ),
+        U.mesh(),
+        dimensionedScalar("jc", dimensionSet(1, -2, -1, 0, 0, 0, 0), 0.0)
+    ),
+    je_
+    (
+        IOobject
+        (
+            "je",
+            U.time().timeName(),
+            U.db(),
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+        ),
+        U.mesh(),
+        dimensionedScalar("je", dimensionSet(1, -2, -1, 0, 0, 0, 0), 0.0)
+    ),
     mCond_
     (
         IOobject
@@ -227,282 +256,14 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	    U.mesh(),
 	    dimensionedScalar("mEvapT", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
 	),
-	p_(U.db().lookupObject<volScalarField>("p")),
-	T_(U.db().lookupObject<volScalarField>("T")),
-    TSatG_("TSatGlobal", dimTemperature, phaseChangeTwoPhaseMixtureCoeffs_),
-    TSat_
-    (
-        IOobject
-        (
-            "TSat",
-            U.time().timeName(),
-            U.db(),
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-        ),
-        U.mesh(),
-		TSatG_
-    ),
-    pSat_("pSat", dimPressure, phaseChangeTwoPhaseMixtureCoeffs_),
-    hEvap_("hEvap", dimEnergy/dimMass, phaseChangeTwoPhaseMixtureCoeffs_),
-    TSatLocalPressure_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("TSatLocalPressure"))),
 	printPhaseChange_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("printPhaseChange")))
 {
-	Info<< "TSatGlobal = "				 << TSatG_ << endl;
-	Info<< "pSat = "		  			 << pSat_ << endl;
-	Info<< "hEvap = "		  			 << hEvap_ << endl;
-	Info<< "TSatLocalPressure = "        << TSatLocalPressure_ << endl;
 	Info<< "printPhaseChange = "         << printPhaseChange_ << endl;
-
-	Info<< "Condensation is " << cond_	 << endl;
-	Info<< "Evaporation is "  << evap_   << endl;
 	Info<< "Hardt-Wondra algorithm is: " << isHW_ << endl;
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void Foam::phaseChangeTwoPhaseMixture::calcLimitedAlphal()
-{
-	if(!limitedAlphalCalculated_)
-	{
-		limitedAlphal_ = min(max(alpha1(), scalar(0)), scalar(1));
-		limitedAlphalCalculated_ = true;
-	}
-}
-
-void Foam::phaseChangeTwoPhaseMixture::calcMagGradLimitedAlphal()
-{
-	if (!magGradLimitedAlphalCalculated_)
-	{
-		calcLimitedAlphal();
-		magGradLimitedAlphal_ = mag(fvc::grad(limitedAlphal_));
-		magGradLimitedAlphalCalculated_ = true;
-	}
-}
-
-void Foam::phaseChangeTwoPhaseMixture::HardtWondra()
-{
-	if(!HW_)
-	{
-		magGradLimitedAlphalCalculated_ = false;
-		return;
-	}
-	else
-	{
-		// 1) Calculate |grad(alphal)|
-		calcMagGradLimitedAlphal();
-
-		//- Smearing of source term field
-		dimensionedScalar DPsi
-		(
-		    "DPsi",
-		    dimArea,
-		    spread_/sqr(gAverage(T_.mesh().nonOrthDeltaCoeffs()))
-		);
-
-		// 2) volume integral from |grad(alphal)|
-		dimensionedScalar intPsi0Tild = fvc::domainIntegrate(magGradLimitedAlphal_);
-		dimensionedScalar intAlphaPsi0Tild = fvc::domainIntegrate(limitedAlphal_*magGradLimitedAlphal_);
-			
-		// 4) calculate N
-		dimensionedScalar N("N", dimensionSet(0,0,0,0,0,0,0), 2.0);
-		if (intAlphaPsi0Tild.value() > 1e-99)
-		{
-			N = intPsi0Tild/intAlphaPsi0Tild;
-		}
-
-		if (cond_)
-		{
-			// 5) phi0
-			mCondAlphal_   *= N; // According to HW it should be like this
-			//                       // but it gives slightly higher errors if uncommentd
-			//mCondNoAlphal_ *= N;
-			mCondNoTmTSat_ *= N;
-
-			dimensionedScalar intPsi0l = fvc::domainIntegrate(mCondAlphal_);
-
-			const fvMesh& mesh = T_.mesh();
-			volScalarField psil
-			(
-			    IOobject
-			    (
-			        "psil",
-			        mesh.time().timeName(),
-			        mesh,
-			        IOobject::NO_READ,
-			        IOobject::NO_WRITE
-			    ),
-			    mesh,
-			    dimensionedScalar(mCondAlphal_.dimensions(), Zero),
-			    zeroGradientFvPatchField<scalar>::typeName
-			);
-			
-			// 6) Solve Helmholtz equation
-			fvScalarMatrix psilEqn
-			(
-				fvm::Sp(scalar(1),psil) - fvm::laplacian(DPsi,psil) == mCondAlphal_
-			);
-			
-			psilEqn.solve();
-			
-			//- Cut cells with cutoff < alpha1 < 1-cutoff and rescale remaining source term field
-			dimensionedScalar intPsiLiquidCondensation ("intPsiLiquidCondensation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
-			dimensionedScalar intPsiVaporCondensation ("intPsiVaporCondensation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
-
-
-			forAll(mesh.C(),iCell)
-			{
-				if ((limitedAlphal_[iCell]) < cutoff_)
-				{
-					intPsiVaporCondensation.value() += (1.0-limitedAlphal_[iCell])*psil[iCell]*mesh.V()[iCell];
-				}
-				else if ((limitedAlphal_[iCell]) > 1.0-cutoff_)
-				{
-					intPsiLiquidCondensation.value() += (limitedAlphal_[iCell])*psil[iCell]*mesh.V()[iCell];
-				}
-			}
-
-			dimensionedScalar intPsil = fvc::domainIntegrate(psil);
-			
-			//- 7) Calculate Nl and Nv
-			dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
-			dimensionedScalar Nv ("Nv", dimensionSet(0,0,0,0,0,0,0), 2.0);
-			
-			reduce(intPsiLiquidCondensation.value(),sumOp<scalar>());
-			reduce(intPsiVaporCondensation.value(),sumOp<scalar>());
-			
-			if (intPsiLiquidCondensation.value() > 1e-99)
-			{
-			    Nl = intPsi0l/intPsiLiquidCondensation;
-			}
-			if (intPsiVaporCondensation.value() > 1e-99)
-			{
-			    Nv = intPsi0l/intPsiVaporCondensation;
-			}
-			
-			        
-			//- 8) Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
-			forAll(mesh.C(),iCell)
-			{
-				if (limitedAlphal_[iCell] < cutoff_)
-				{
-					mCondAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psil[iCell];
-					//mCondNoTmTSat_[iCell] += -Nv.value()*(1.0-limitedAlphal_[iCell])*psil[iCell]*cp2_.value()*T_[iCell]/hEvap_.value();
-				}
-				else if (limitedAlphal_[iCell] > 1.0-cutoff_)
-				{
-					mCondAlphal_[iCell] = Nl.value()*(limitedAlphal_[iCell])*psil[iCell];
-					//mCondNoTmTSat_[iCell] += Nl.value()*(limitedAlphal_[iCell])*psil[iCell]*cp1_.value()*T_[iCell]/hEvap_.value();
-				}
-				else
-				{
-					mCondAlphal_[iCell] = 0.0;
-				}
-			}
-		}
-
-		if (evap_)
-		{
-			//mEvapAlphal_   *= N; // According to HW it should be like this
-			                       // but it gives slightly higher errors if uncommentd
-			mEvapNoAlphal_ *= N;
-			mEvapNoTmTSat_ *= N;
-
-			dimensionedScalar intPsi0v = fvc::domainIntegrate(mEvapAlphal_);
-
-			const fvMesh& mesh = T_.mesh();
-			volScalarField psiv
-			(
-			    IOobject
-			    (
-			        "psiv",
-			        mesh.time().timeName(),
-			        mesh,
-			        IOobject::NO_READ,
-			        IOobject::NO_WRITE
-			    ),
-			    mesh,
-			    dimensionedScalar(mEvapAlphal_.dimensions(), Zero),
-			    zeroGradientFvPatchField<scalar>::typeName
-			);
-			
-			fvScalarMatrix psivEqn
-			(
-				fvm::Sp(scalar(1),psiv) - fvm::laplacian(DPsi,psiv) == mEvapAlphal_
-			);
-			
-			psivEqn.solve();
-			
-			//- Cut cells with cutoff < alpha1 < 1-cutoff and rescale remaining source term field
-			dimensionedScalar intPsiLiquidEvaporation ("intPsiLiquidEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
-			dimensionedScalar intPsiVaporEvaporation ("intPsiVaporEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
-
-
-			forAll(mesh.C(),iCell)
-			{
-				if (limitedAlphal_[iCell] < cutoff_)
-				{
-					intPsiVaporEvaporation.value() += (1.0-limitedAlphal_[iCell])*psiv[iCell]*mesh.V()[iCell];
-				}
-				else if (limitedAlphal_[iCell] > 1.0-cutoff_)
-				{
-					intPsiLiquidEvaporation.value() += limitedAlphal_[iCell]*psiv[iCell]*mesh.V()[iCell];
-				}
-			}
-			
-			//- Calculate Nl and Nv
-			dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
-			dimensionedScalar Nv ("Nv", dimensionSet(0,0,0,0,0,0,0), 2.0);
-			
-			reduce(intPsiLiquidEvaporation.value(),sumOp<scalar>());
-			reduce(intPsiVaporEvaporation.value(),sumOp<scalar>());
-			
-			if (intPsiLiquidEvaporation.value() > 1e-99)
-			{
-			    Nl = intPsi0v/intPsiLiquidEvaporation;
-			}
-			if (intPsiVaporEvaporation.value() > 1e-99)
-			{
-			    Nv = intPsi0v/intPsiVaporEvaporation;
-			}
-			
-			        
-			//- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
-			forAll(mesh.C(),iCell)
-			{
-				if (limitedAlphal_[iCell] < cutoff_)
-				{
-					mEvapAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psiv[iCell];
-				}
-				else if (limitedAlphal_[iCell] > 1.0-cutoff_)
-				{
-					mEvapAlphal_[iCell] = Nl.value()*limitedAlphal_[iCell]*psiv[iCell];
-				}
-				else
-				{
-					mEvapAlphal_[iCell] = 0.0;
-				}
-			}
-		}
-
-		magGradLimitedAlphalCalculated_ = false;
-		limitedAlphalCalculated_ = false;
-	}
-}
-
-void Foam::phaseChangeTwoPhaseMixture::calcTSatLocal() 
-{
-	if (TSatLocalPressure_)
-	{
-		//Info <<"TSat is calculated based on local pressure field." << endl;
-	    TSat_ = 1.0/(1.0/TSatG_ - R_/hEvap_*log(max(p_/pSat_,1E-08)));
-	}
-	//else
-	//{
-	//	Info <<"TSat is constant, TSat = " << TSatG_ << endl;
-	//}
-}
-
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
 Foam::phaseChangeTwoPhaseMixture::vDotAlphal() const
 {
