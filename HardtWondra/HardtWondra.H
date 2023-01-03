@@ -103,6 +103,10 @@ class HardtWondra
 		//- Gradient magnitude of limited alphal
 		volScalarField magGradLimitedAlphal_;
 
+		//?????????????
+		//- Mass source term for condensation
+		volScalarField rhoSourcel_;
+
     // Private Member Functions
 
         //- No copy construct
@@ -159,14 +163,35 @@ public:
 
     // Member Functions
 	    //- Hardt-Wondra algorithm
-		//  current implementation is:
+		//  OLD implementation WAS:
 		//  - no spread mass source terms in alphaEqn
 		//  - spread mass source terms in pEqn
 		//  - no spread mass source terms in TEqn
 		//  Additionally in TEqn mass source term the correction
 		//  term h_c is ommited (Eq. (23)) because it gives 
 		//  worse results
-		void spread();
+		//
+		//  Ustalenia:
+		//  1) przy MULESCorr = false uzywany jest explicitSolve
+		//     bez correct
+		//  2) wydaje się ze dla 1) czlon zrodlowy nie jest przemnazany 
+		//     przez alphal (nie ma nigdzie fvm::Sp)
+		//  3) evapVOFHardt wstawia do alphaEqn surowy czlon zrodlowy (bez spread)
+		//     Smeared source term jest wstawiany tylko do pEqn i to jawnie bez
+		//     fvm::Sp
+		//
+		//  Wnioski:
+		//  1) na poczatek zrob algorytm z uzyciem tylko explicitSolve 
+		//     (MULESCorr = false)
+		//  2) zrob implementacje jak w evapVOFHardt (spread tylko dla pEqn i explicit)
+		//  3) zaimplementuj caly czlon h
+		//  4) niech funkcja spread przyjmuje jc i je
+		//
+		void spread
+		(
+			volScalarField& condMassFlux, 
+			volScalarField& evapMassFlux
+		);
 
     // Access
 

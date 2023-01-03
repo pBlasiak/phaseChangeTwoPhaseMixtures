@@ -42,7 +42,7 @@ SourceFiles
 #include "dimensionedScalar.H"
 #include "autoPtr.H"
 #include "Pair.H"
-#include "SaturationProperties.H"
+#include "SaturationPropertiesModels/SaturationProperties/SaturationProperties.H"
 #include "HardtWondra.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -195,6 +195,9 @@ public:
             return mEvapNoAlphal_;
         }
 
+		//- Calculates phase change mass fluxes
+		virtual void j() = 0;
+		
         //- Return the volumetric mass condensation (+) and vaporisation (-) rates 
 		//  as a coefficient to multiply by (1 - alphal) for the condensation rate
         //  and a coefficient to multiply by alphal for the vaporisation rate

@@ -106,7 +106,11 @@ Foam::HardtWondra::~HardtWondra()
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void Foam::HardtWondra::spread()
+void Foam::HardtWondra::spread
+(
+	volScalarField& jc, 
+	volScalarField& je
+)
 {
 	// 1) Calculate |grad(alphal)|
 	calcMagGradLimitedAlphal();
@@ -119,26 +123,23 @@ void Foam::HardtWondra::spread()
 	    spread_/sqr(gAverage(alphalRef_.mesh().nonOrthDeltaCoeffs()))
 	);
 	
-	// 2) volume integral from |grad(alphal)|
-	dimensionedScalar intPsi0 = fvc::domainIntegrate(magGradLimitedAlphal_);
-	dimensionedScalar intAlphaPsi0 = fvc::domainIntegrate(limitedAlphal_*magGradLimitedAlphal_);
+	// 2) volume integral from C' = |grad(alphal)|
+	dimensionedScalar intCprim = fvc::domainIntegrate(magGradLimitedAlphal_);
+	dimensionedScalar intAlphalCprim = fvc::domainIntegrate(limitedAlphal_*magGradLimitedAlphal_);
 		
 	// 4) calculate N
 	dimensionedScalar N("N", dimensionSet(0,0,0,0,0,0,0), 2.0);
-	if (intAlphaPsi0.value() > 1e-99)
+	if (intAlphalCprim.value() > 1e-99)
 	{
-		N = intPsi0/intAlphaPsi0;
+		N = intCprim/intAlphalCprim;
 	}
 	
 	if (cond_)
 	{
-		// 5) phi0
-		mCondAlphal_   *= N; // According to HW it should be like this
-		//                       // but it gives slightly higher errors if uncommentd
-		//mCondNoAlphal_ *= N;
-		mCondNoTmTSat_ *= N;
+		// 5) phi0 Eqn. (13)
+		volScalarField psi0l = (N*jc*(1-limitedAlphal_)*magGradLimitedAlphal_)();
 	
-		dimensionedScalar intPsi0l = fvc::domainIntegrate(mCondAlphal_);
+		//dimensionedScalar intPsi0l = fvc::domainIntegrate(psi0l);
 	
 		const fvMesh& mesh = alphalRef_.mesh();
 		volScalarField psil
@@ -152,14 +153,14 @@ void Foam::HardtWondra::spread()
 		        IOobject::NO_WRITE
 		    ),
 		    mesh,
-		    dimensionedScalar(mCondAlphal_.dimensions(), Zero),
+		    dimensionedScalar(psi0l.dimensions(), Zero),
 		    zeroGradientFvPatchField<scalar>::typeName
 		);
 		
 		// 6) Solve Helmholtz equation
 		fvScalarMatrix psilEqn
 		(
-			fvm::Sp(scalar(1),psil) - fvm::laplacian(DPsi,psil) == mCondAlphal_
+			fvm::Sp(scalar(1),psil) - fvm::laplacian(DPsi,psil) == psi0l
 		);
 		
 		psilEqn.solve();
@@ -181,6 +182,7 @@ void Foam::HardtWondra::spread()
 			}
 		}
 	
+		//TODO: check if it is equal to intPsi0l
 		dimensionedScalar intPsil = fvc::domainIntegrate(psil);
 		
 		//- 7) Calculate Nl and Nv
@@ -192,32 +194,35 @@ void Foam::HardtWondra::spread()
 		
 		if (intPsiLiquidCondensation.value() > 1e-99)
 		{
-		    Nl = intPsi0l/intPsiLiquidCondensation;
+		    Nl = intPsil/intPsiLiquidCondensation;
 		}
 		if (intPsiVaporCondensation.value() > 1e-99)
 		{
-		    Nv = intPsi0l/intPsiVaporCondensation;
+		    Nv = intPsil/intPsiVaporCondensation;
 		}
 		
-		        
 		//- 8) Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
 		forAll(mesh.C(),iCell)
 		{
 			if (limitedAlphal_[iCell] < cutoff_)
 			{
-				mCondAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psil[iCell];
-				//mCondNoTmTSat_[iCell] += -Nv.value()*(1.0-limitedAlphal_[iCell])*psil[iCell]*cp2_.value()*T_[iCell]/hEvap_.value();
+				rhoSourcel_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psil[iCell];
 			}
 			else if (limitedAlphal_[iCell] > 1.0-cutoff_)
 			{
-				mCondAlphal_[iCell] = Nl.value()*(limitedAlphal_[iCell])*psil[iCell];
-				//mCondNoTmTSat_[iCell] += Nl.value()*(limitedAlphal_[iCell])*psil[iCell]*cp1_.value()*T_[iCell]/hEvap_.value();
+				rhoSourcel_[iCell] = Nl.value()*(limitedAlphal_[iCell])*psil[iCell];
 			}
 			else
 			{
-				mCondAlphal_[iCell] = 0.0;
+				rhoSourcel_[iCell] = 0.0;
 			}
 		}
+
+		//TODO: trzeba sprawdzic czy znaki sa dobrze
+		//      na razie jest po prostu na odwrot niz w artykule HW
+		//      Pozniej mozna tez pomyslec jak wykorzystac fvm::Sp
+		//- 9) Calculates enthalpy source term
+		hSourcel_ = (-Nv*(1.0-limitedAlphal_)*cp2_ + Nl*limitedAlphal_*cp1_)*T_*psil + hEvap_*psi0l;
 	}
 	
 	if (evap_)
