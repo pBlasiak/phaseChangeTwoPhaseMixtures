@@ -55,6 +55,7 @@ SourceFiles
 
 #include "fvCFD.H"
 #include "typeInfo.H"
+#include "phaseChangeTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -103,9 +104,15 @@ class HardtWondra
 		//- Gradient magnitude of limited alphal
 		volScalarField magGradLimitedAlphal_;
 
-		//?????????????
 		//- Mass source term for condensation
 		volScalarField rhoSourcel_;
+		
+		//- Entalpy source term for condensation
+		volScalarField hSourcel_;
+
+		phaseChangeTwoPhaseMixture* const mixture_;
+
+		//const SaturationProperties* const mixtureSatProps_;
 
     // Private Member Functions
 
@@ -148,7 +155,12 @@ public:
         //HardtWondra();
 
         //- Construct from components
-        HardtWondra(const volScalarField& alpha1);
+        HardtWondra
+		(
+			const volScalarField& alpha1,
+			phaseChangeTwoPhaseMixture* const mix
+			//SaturationProperties* sat
+		);
 
 
     // Selectors

@@ -58,7 +58,9 @@ void Foam::HardtWondra::calcMagGradLimitedAlphal()
 
 Foam::HardtWondra::HardtWondra
 (
-	const volScalarField& alpha1
+	const volScalarField& alpha1,
+	phaseChangeTwoPhaseMixture* const mix
+	//SaturationProperties* sat
 )
 :
 	HWdict_
@@ -81,7 +83,35 @@ Foam::HardtWondra::HardtWondra
 	cutoff_(HWdict_.getOrDefault<scalar>("cutoff", 1e-3)),
 	spread_(HWdict_.getOrDefault<scalar>("spread", 3)),
 	limitedAlphal_(min(max(alphalRef_, scalar(0)), scalar(1))),
-	magGradLimitedAlphal_(mag(fvc::grad(limitedAlphal_)))
+	magGradLimitedAlphal_(mag(fvc::grad(limitedAlphal_))),
+	rhoSourcel_
+	(
+	    IOobject
+	    (
+	        "rhoSourcel",
+	        alpha1.time().timeName(),
+	        alpha1.db(),
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+	    ),
+	    alpha1.mesh(),
+	    dimensionedScalar("rhoSourcel", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
+	),
+	hSourcel_
+	(
+	    IOobject
+	    (
+	        "hSourcel",
+	        alpha1.time().timeName(),
+	        alpha1.db(),
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+	    ),
+	    alpha1.mesh(),
+	    dimensionedScalar("hSourcel", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
+	),
+	mixture_{mix}
+	//mixtureSatProps_{sat}
 {
 	Info<< "Condensation is   "   << cond_   << endl;
 	Info<< "Evaporation is    "   << evap_   << endl;
@@ -222,92 +252,96 @@ void Foam::HardtWondra::spread
 		//      na razie jest po prostu na odwrot niz w artykule HW
 		//      Pozniej mozna tez pomyslec jak wykorzystac fvm::Sp
 		//- 9) Calculates enthalpy source term
-		hSourcel_ = (-Nv*(1.0-limitedAlphal_)*cp2_ + Nl*limitedAlphal_*cp1_)*T_*psil + hEvap_*psi0l;
+		hSourcel_ = 
+		(
+		   - Nv*(1.0-limitedAlphal_)*mixture_->cp2() 
+		   + Nl*limitedAlphal_*mixture_->cp1()
+		)*mixtureSatProps_->T()*psil + mixtureSatProps_->hEvap()*psi0l;
 	}
 	
-	if (evap_)
-	{
-		//mEvapAlphal_   *= N; // According to HW it should be like this
-		                       // but it gives slightly higher errors if uncommentd
-		mEvapNoAlphal_ *= N;
-		mEvapNoTmTSat_ *= N;
-	
-		dimensionedScalar intPsi0v = fvc::domainIntegrate(mEvapAlphal_);
-	
-		const fvMesh& mesh = T_.mesh();
-		volScalarField psiv
-		(
-		    IOobject
-		    (
-		        "psiv",
-		        mesh.time().timeName(),
-		        mesh,
-		        IOobject::NO_READ,
-		        IOobject::NO_WRITE
-		    ),
-		    mesh,
-		    dimensionedScalar(mEvapAlphal_.dimensions(), Zero),
-		    zeroGradientFvPatchField<scalar>::typeName
-		);
-		
-		fvScalarMatrix psivEqn
-		(
-			fvm::Sp(scalar(1),psiv) - fvm::laplacian(DPsi,psiv) == mEvapAlphal_
-		);
-		
-		psivEqn.solve();
-		
-		//- Cut cells with cutoff < alpha1 < 1-cutoff and rescale remaining source term field
-		dimensionedScalar intPsiLiquidEvaporation ("intPsiLiquidEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
-		dimensionedScalar intPsiVaporEvaporation ("intPsiVaporEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
-	
-	
-		forAll(mesh.C(),iCell)
-		{
-			if (limitedAlphal_[iCell] < cutoff_)
-			{
-				intPsiVaporEvaporation.value() += (1.0-limitedAlphal_[iCell])*psiv[iCell]*mesh.V()[iCell];
-			}
-			else if (limitedAlphal_[iCell] > 1.0-cutoff_)
-			{
-				intPsiLiquidEvaporation.value() += limitedAlphal_[iCell]*psiv[iCell]*mesh.V()[iCell];
-			}
-		}
-		
-		//- Calculate Nl and Nv
-		dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
-		dimensionedScalar Nv ("Nv", dimensionSet(0,0,0,0,0,0,0), 2.0);
-		
-		reduce(intPsiLiquidEvaporation.value(),sumOp<scalar>());
-		reduce(intPsiVaporEvaporation.value(),sumOp<scalar>());
-		
-		if (intPsiLiquidEvaporation.value() > 1e-99)
-		{
-		    Nl = intPsi0v/intPsiLiquidEvaporation;
-		}
-		if (intPsiVaporEvaporation.value() > 1e-99)
-		{
-		    Nv = intPsi0v/intPsiVaporEvaporation;
-		}
-		
-		        
-		//- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
-		forAll(mesh.C(),iCell)
-		{
-			if (limitedAlphal_[iCell] < cutoff_)
-			{
-				mEvapAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psiv[iCell];
-			}
-			else if (limitedAlphal_[iCell] > 1.0-cutoff_)
-			{
-				mEvapAlphal_[iCell] = Nl.value()*limitedAlphal_[iCell]*psiv[iCell];
-			}
-			else
-			{
-				mEvapAlphal_[iCell] = 0.0;
-			}
-		}
-	}
+	//if (evap_)
+	//{
+	//	//mEvapAlphal_   *= N; // According to HW it should be like this
+	//	                       // but it gives slightly higher errors if uncommentd
+	//	mEvapNoAlphal_ *= N;
+	//	mEvapNoTmTSat_ *= N;
+	//
+	//	dimensionedScalar intPsi0v = fvc::domainIntegrate(mEvapAlphal_);
+	//
+	//	const fvMesh& mesh = T_.mesh();
+	//	volScalarField psiv
+	//	(
+	//	    IOobject
+	//	    (
+	//	        "psiv",
+	//	        mesh.time().timeName(),
+	//	        mesh,
+	//	        IOobject::NO_READ,
+	//	        IOobject::NO_WRITE
+	//	    ),
+	//	    mesh,
+	//	    dimensionedScalar(mEvapAlphal_.dimensions(), Zero),
+	//	    zeroGradientFvPatchField<scalar>::typeName
+	//	);
+	//	
+	//	fvScalarMatrix psivEqn
+	//	(
+	//		fvm::Sp(scalar(1),psiv) - fvm::laplacian(DPsi,psiv) == mEvapAlphal_
+	//	);
+	//	
+	//	psivEqn.solve();
+	//	
+	//	//- Cut cells with cutoff < alpha1 < 1-cutoff and rescale remaining source term field
+	//	dimensionedScalar intPsiLiquidEvaporation ("intPsiLiquidEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+	//	dimensionedScalar intPsiVaporEvaporation ("intPsiVaporEvaporation", dimensionSet(1,0,-1,0,0,0,0), 0.0);
+	//
+	//
+	//	forAll(mesh.C(),iCell)
+	//	{
+	//		if (limitedAlphal_[iCell] < cutoff_)
+	//		{
+	//			intPsiVaporEvaporation.value() += (1.0-limitedAlphal_[iCell])*psiv[iCell]*mesh.V()[iCell];
+	//		}
+	//		else if (limitedAlphal_[iCell] > 1.0-cutoff_)
+	//		{
+	//			intPsiLiquidEvaporation.value() += limitedAlphal_[iCell]*psiv[iCell]*mesh.V()[iCell];
+	//		}
+	//	}
+	//	
+	//	//- Calculate Nl and Nv
+	//	dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
+	//	dimensionedScalar Nv ("Nv", dimensionSet(0,0,0,0,0,0,0), 2.0);
+	//	
+	//	reduce(intPsiLiquidEvaporation.value(),sumOp<scalar>());
+	//	reduce(intPsiVaporEvaporation.value(),sumOp<scalar>());
+	//	
+	//	if (intPsiLiquidEvaporation.value() > 1e-99)
+	//	{
+	//	    Nl = intPsi0v/intPsiLiquidEvaporation;
+	//	}
+	//	if (intPsiVaporEvaporation.value() > 1e-99)
+	//	{
+	//	    Nv = intPsi0v/intPsiVaporEvaporation;
+	//	}
+	//	
+	//	        
+	//	//- Set source terms in cells with alpha1 < cutoff or alpha1 > 1-cutoff
+	//	forAll(mesh.C(),iCell)
+	//	{
+	//		if (limitedAlphal_[iCell] < cutoff_)
+	//		{
+	//			mEvapAlphal_[iCell] = -Nv.value()*(1.0-limitedAlphal_[iCell])*psiv[iCell];
+	//		}
+	//		else if (limitedAlphal_[iCell] > 1.0-cutoff_)
+	//		{
+	//			mEvapAlphal_[iCell] = Nl.value()*limitedAlphal_[iCell]*psiv[iCell];
+	//		}
+	//		else
+	//		{
+	//			mEvapAlphal_[iCell] = 0.0;
+	//		}
+	//	}
+	//}
 }
 
 // * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //

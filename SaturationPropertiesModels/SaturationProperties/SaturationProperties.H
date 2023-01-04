@@ -142,6 +142,18 @@ public:
 
     // Member Functions
 	
+        //- Return const-access to the pressure field
+        const volScalarField& p() const
+        {
+            return p_;
+        }
+		
+        //- Return const-access to the temperature field
+        const volScalarField& T() const
+        {
+            return T_;
+        }
+
         //- Return const-access to the global saturation temperature
         const dimensionedScalar& TSatG() const
         {
