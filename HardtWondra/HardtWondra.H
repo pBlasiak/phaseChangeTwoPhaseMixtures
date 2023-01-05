@@ -55,7 +55,7 @@ SourceFiles
 
 #include "fvCFD.H"
 #include "typeInfo.H"
-#include "phaseChangeTwoPhaseMixture.H"
+#include "SaturationPropertiesModels/SaturationProperties/SaturationProperties.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -65,7 +65,7 @@ namespace Foam
 // Forward Declarations
 //class Istream;
 //class Ostream;
-//class HardtWondra;
+class phaseChangeTwoPhaseMixture;
 //
 //Istream& operator>>(Istream&, HardtWondra&);
 //Ostream& operator<<(Ostream&, const HardtWondra&);
@@ -111,6 +111,7 @@ class HardtWondra
 		volScalarField hSourcel_;
 
 		const SaturationProperties& mixtureSatProps_;
+		const phaseChangeTwoPhaseMixture& mixture_;
 
     // Private Member Functions
 
@@ -156,7 +157,8 @@ public:
         HardtWondra
 		(
 			const volScalarField& alpha1,
-			const SaturationProperties& sat
+			const SaturationProperties& sat,
+			const phaseChangeTwoPhaseMixture& mix
 		);
 
 
@@ -200,9 +202,9 @@ public:
 		void spread
 		(
 			volScalarField& condMassFlux, 
-			volScalarField& evapMassFlux,
-			const dimensionedScalar cp1,
-			const dimensionedScalar cp2
+			volScalarField& evapMassFlux
+			//const dimensionedScalar cp1,
+			//const dimensionedScalar cp2
 		);
 
     // Access

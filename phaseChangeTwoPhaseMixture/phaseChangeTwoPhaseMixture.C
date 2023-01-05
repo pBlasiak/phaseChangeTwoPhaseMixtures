@@ -73,7 +73,9 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 			phaseChangeTwoPhaseMixtureCoeffs_.get<word>("satPropModel")
         )
     ),
-    HW_(new HardtWondra(alpha1(), satProps_.ref())),
+    //HW_(new HardtWondra(alpha1(), satProps_.ref())),
+    //HW_(new HardtWondra(alpha1(), satProps_.ref(), *this)),
+    HW_(autoPtr<HardtWondra>()),
     jc_
     (
         IOobject
@@ -258,6 +260,10 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	),
 	printPhaseChange_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("printPhaseChange")))
 {
+	HW_.reset
+	(
+		new HardtWondra(alpha1(), satProps_.ref(), *this)
+	);
 	Info<< "printPhaseChange = "         << printPhaseChange_ << endl;
 	Info<< "Hardt-Wondra algorithm is: " << isHW_ << endl;
 }
