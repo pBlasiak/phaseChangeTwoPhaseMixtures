@@ -73,8 +73,7 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 			phaseChangeTwoPhaseMixtureCoeffs_.get<word>("satPropModel")
         )
     ),
-    HW_(new HardtWondra(alpha1(), this)),
-    //HW_(new HardtWondra(alpha1(), this, satProps_)),
+    HW_(new HardtWondra(alpha1(), satProps_.ref())),
     jc_
     (
         IOobject

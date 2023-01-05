@@ -59,8 +59,7 @@ void Foam::HardtWondra::calcMagGradLimitedAlphal()
 Foam::HardtWondra::HardtWondra
 (
 	const volScalarField& alpha1,
-	phaseChangeTwoPhaseMixture* const mix
-	//SaturationProperties* sat
+	const SaturationProperties& sat
 )
 :
 	HWdict_
@@ -110,8 +109,7 @@ Foam::HardtWondra::HardtWondra
 	    alpha1.mesh(),
 	    dimensionedScalar("hSourcel", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
 	),
-	mixture_{mix}
-	//mixtureSatProps_{sat}
+	mixtureSatProps_{sat}
 {
 	Info<< "Condensation is   "   << cond_   << endl;
 	Info<< "Evaporation is    "   << evap_   << endl;
@@ -139,7 +137,9 @@ Foam::HardtWondra::~HardtWondra()
 void Foam::HardtWondra::spread
 (
 	volScalarField& jc, 
-	volScalarField& je
+	volScalarField& je,
+	const dimensionedScalar cp1,
+	const dimensionedScalar cp2
 )
 {
 	// 1) Calculate |grad(alphal)|
@@ -254,9 +254,9 @@ void Foam::HardtWondra::spread
 		//- 9) Calculates enthalpy source term
 		hSourcel_ = 
 		(
-		   - Nv*(1.0-limitedAlphal_)*mixture_->cp2() 
-		   + Nl*limitedAlphal_*mixture_->cp1()
-		)*mixtureSatProps_->T()*psil + mixtureSatProps_->hEvap()*psi0l;
+		   - Nv*(1.0-limitedAlphal_)*cp2 
+		   + Nl*limitedAlphal_*cp1
+		)*mixtureSatProps_.T()*psil + mixtureSatProps_.hEvap()*psi0l;
 	}
 	
 	//if (evap_)

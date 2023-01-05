@@ -63,12 +63,12 @@ namespace Foam
 {
 
 // Forward Declarations
-class Istream;
-class Ostream;
-class HardtWondra;
-
-Istream& operator>>(Istream&, HardtWondra&);
-Ostream& operator<<(Ostream&, const HardtWondra&);
+//class Istream;
+//class Ostream;
+//class HardtWondra;
+//
+//Istream& operator>>(Istream&, HardtWondra&);
+//Ostream& operator<<(Ostream&, const HardtWondra&);
 
 
 /*---------------------------------------------------------------------------*\
@@ -110,9 +110,7 @@ class HardtWondra
 		//- Entalpy source term for condensation
 		volScalarField hSourcel_;
 
-		phaseChangeTwoPhaseMixture* const mixture_;
-
-		//const SaturationProperties* const mixtureSatProps_;
+		const SaturationProperties& mixtureSatProps_;
 
     // Private Member Functions
 
@@ -158,14 +156,14 @@ public:
         HardtWondra
 		(
 			const volScalarField& alpha1,
-			phaseChangeTwoPhaseMixture* const mix
-			//SaturationProperties* sat
+			const SaturationProperties& sat
 		);
 
 
     // Selectors
 
         //- Select default constructed
+        //autoPtr<HardtWondra> New();
         //static autoPtr<HardtWondra> New();
 
 
@@ -202,7 +200,9 @@ public:
 		void spread
 		(
 			volScalarField& condMassFlux, 
-			volScalarField& evapMassFlux
+			volScalarField& evapMassFlux,
+			const dimensionedScalar cp1,
+			const dimensionedScalar cp2
 		);
 
     // Access
@@ -222,8 +222,8 @@ public:
 
     // IOstream Operators
 
-        friend Istream& operator>>(Istream&, HardtWondra&);
-        friend Ostream& operator<<(Ostream&, const HardtWondra&);
+        //friend Istream& operator>>(Istream&, HardtWondra&);
+        //friend Ostream& operator<<(Ostream&, const HardtWondra&);
 };
 
 
