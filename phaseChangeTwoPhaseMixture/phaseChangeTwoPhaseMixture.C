@@ -73,8 +73,6 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 			phaseChangeTwoPhaseMixtureCoeffs_.get<word>("satPropModel")
         )
     ),
-    //HW_(new HardtWondra(alpha1(), satProps_.ref())),
-    //HW_(new HardtWondra(alpha1(), satProps_.ref(), *this)),
     HW_(autoPtr<HardtWondra>()),
     jc_
     (
@@ -274,9 +272,9 @@ Foam::Pair<Foam::tmp<Foam::volScalarField> >
 Foam::phaseChangeTwoPhaseMixture::vDotAlphal() const
 {
     volScalarField alphalCoeff(1.0/rho1() - alpha1()*(1.0/rho1() - 1.0/rho2()));
-    Pair<tmp<volScalarField> > mDotAlphal = this->mDotAlphal();
+    Pair<tmp<volScalarField>> mDotAlphal = this->mDotAlphal();
 
-    return Pair<tmp<volScalarField> >
+    return Pair<tmp<volScalarField>>
     (
         alphalCoeff*mDotAlphal[0],
         alphalCoeff*mDotAlphal[1]
@@ -311,6 +309,8 @@ Foam::phaseChangeTwoPhaseMixture::vDotT() const
 void Foam::phaseChangeTwoPhaseMixture::correct()
 {
 	thermalIncompressibleTwoPhaseMixture::correct();
+	//TODO
+	//Dodac satProps_->correct() zamiast calcTSatLocal
 	calcTSatLocal();
 
 
@@ -319,9 +319,9 @@ void Foam::phaseChangeTwoPhaseMixture::correct()
 	if (printPhaseChange_)
 	{
     	Info<< "****Condensation rate: "
-    	    << gSum((mCondAlphal_*mesh.V())())*hEvap_.value() << " W" << endl;
+    	    << gSum((mCondAlphal_*mesh.V())())*satProps_->hEvap().value() << " W" << endl;
     	Info<< "****Evaporation rate: "
-    	    << gSum((mEvapAlphal_*mesh.V())())*hEvap_.value() << " W" << endl;
+    	    << gSum((mEvapAlphal_*mesh.V())())*satProps_->hEvap().value() << " W" << endl;
 	}
 }
 
@@ -329,18 +329,10 @@ bool Foam::phaseChangeTwoPhaseMixture::read()
 {
     if (incompressibleTwoPhaseMixture::read())
     {
+		//TODO: cos tu jest raczej zle
         phaseChangeTwoPhaseMixtureCoeffs_ = subDict(type() + "Coeffs");
-        lookup("TSatGlobal") >> TSatG_;
-        lookup("TSatLocalPressure") >> TSatLocalPressure_;
-        lookup("pSat") >> pSat_;
-        lookup("hEvap") >> hEvap_;
-        lookup("R") >> R_;
+        lookup("HardtWondra") >> isHW_;
         lookup("printPhaseChange") >> printPhaseChange_;
-        lookup("HardtWondra") >> HW_;
-        lookup("cutoff") >> cutoff_;
-        lookup("spread") >> spread_;
-        lookup("condensation") >> cond_;
-        lookup("evaporation") >> evap_;
 
         return true;
     }

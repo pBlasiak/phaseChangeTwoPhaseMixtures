@@ -110,7 +110,10 @@ class HardtWondra
 		//- Entalpy source term for condensation
 		volScalarField hSourcel_;
 
+		//- Access to saturation data
 		const SaturationProperties& mixtureSatProps_;
+
+		//- Access to mixture data
 		const phaseChangeTwoPhaseMixture& mixture_;
 
     // Private Member Functions
@@ -201,11 +204,11 @@ public:
 		//
 		void spread
 		(
-			volScalarField& condMassFlux, 
-			volScalarField& evapMassFlux
-			//const dimensionedScalar cp1,
-			//const dimensionedScalar cp2
+			const volScalarField& condMassFlux, 
+			const volScalarField& evapMassFlux
 		);
+
+		void read();
 
     // Access
 

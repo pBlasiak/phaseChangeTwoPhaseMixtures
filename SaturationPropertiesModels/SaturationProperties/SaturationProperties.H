@@ -54,6 +54,8 @@ class thermalIncompressibleTwoPhaseMixture;
 \*---------------------------------------------------------------------------*/
 
 class SaturationProperties
+: 
+	IOdictionary
 {
 
 protected:
@@ -181,7 +183,8 @@ public:
         //- Calculates saturation temperature
         virtual void calcTSat() = 0;
 
-        //- Read the transportProperties dictionary and update
+
+        //- Read the saturation properties and update
         virtual bool read() = 0;
 };
 

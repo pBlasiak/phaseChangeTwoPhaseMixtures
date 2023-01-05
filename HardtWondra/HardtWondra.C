@@ -70,19 +70,19 @@ Foam::HardtWondra::HardtWondra
 	    (
 	        IOobject
             (
-                "phaseChangeProperties", // dictionary name
+                "phaseChangeProperties",	  // dictionary name
                 alpha1.time().constant(),     // dict is found in "constant"
                 alpha1.db(),                  // registry for the dict
-                IOobject::MUST_READ,     // must exist, otherwise failure
-                IOobject::NO_WRITE       // dict is only read by the solver
+                IOobject::MUST_READ,          // must exist, otherwise failure
+                IOobject::NO_WRITE            // dict is only read by the solver
             )
 	    )
 	),
-    cond_{HWdict_.get<Switch>("condensation")},
-    evap_{HWdict_.get<Switch>("evaporation")},
+    cond_{HWdict_.subDict("HardtWondraCoeffs").get<Switch>("condensation")},
+    evap_{HWdict_.subDict("HardtWondraCoeffs").get<Switch>("evaporation")},
 	alphalRef_{alpha1},
-	cutoff_(HWdict_.getOrDefault<scalar>("cutoff", 1e-3)),
-	spread_(HWdict_.getOrDefault<scalar>("spread", 3)),
+	cutoff_(HWdict_.subDict("HardtWondraCoeffs").getOrDefault<scalar>("cutoff", 1e-3)),
+	spread_(HWdict_.subDict("HardtWondraCoeffs").getOrDefault<scalar>("spread", 3)),
 	limitedAlphal_(min(max(alphalRef_, scalar(0)), scalar(1))),
 	magGradLimitedAlphal_(mag(fvc::grad(limitedAlphal_))),
 	rhoSourcel_
@@ -139,10 +139,8 @@ Foam::HardtWondra::~HardtWondra()
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void Foam::HardtWondra::spread
 (
-	volScalarField& jc, 
-	volScalarField& je
-	//const dimensionedScalar cp1,
-	//const dimensionedScalar cp2
+	const volScalarField& jc, 
+	const volScalarField& je
 )
 {
 	// 1) Calculate |grad(alphal)|
@@ -172,7 +170,9 @@ void Foam::HardtWondra::spread
 		// 5) phi0 Eqn. (13)
 		volScalarField psi0l = (N*jc*(1-limitedAlphal_)*magGradLimitedAlphal_)();
 	
-		//dimensionedScalar intPsi0l = fvc::domainIntegrate(psi0l);
+		//TODO
+		//Jak to samo co intPsil to mozna usunac
+		dimensionedScalar intPsi0l = fvc::domainIntegrate(psi0l);
 	
 		const fvMesh& mesh = alphalRef_.mesh();
 		volScalarField psil
@@ -217,6 +217,10 @@ void Foam::HardtWondra::spread
 	
 		//TODO: check if it is equal to intPsi0l
 		dimensionedScalar intPsil = fvc::domainIntegrate(psil);
+		if (intPsil.value() != 0)
+		{
+			Info<< "intPsi0l/intPsil = " << intPsi0l/intPsil << endl;
+		}
 		
 		//- 7) Calculate Nl and Nv
 		dimensionedScalar Nl ("Nl", dimensionSet(0,0,0,0,0,0,0), 2.0);
@@ -346,6 +350,16 @@ void Foam::HardtWondra::spread
 	//	}
 	//}
 }
+
+//TODO
+//void Foam::HardtWondra::read()
+//{
+//	HWdict_ = subDict("HardtWondraCoeffs");
+//    lookup("condensation") >> cond_;
+//    lookup("evaporation") >> evap_; 
+//    lookup("cutoff") >> cutoff_;
+//    lookup("spread") >> spread_;
+//}
 
 // * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //
 

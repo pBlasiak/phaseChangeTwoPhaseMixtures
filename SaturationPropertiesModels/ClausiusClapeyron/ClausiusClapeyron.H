@@ -36,7 +36,7 @@ SourceFiles
 #ifndef ClausiusClapeyron_H
 #define ClausiusClapeyron_H
 
-#include "SaturationProperties.H"
+#include "../SaturationProperties/SaturationProperties.H"
 #include "thermalIncompressibleTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * * * *  * * * * * * * * * * * * * * * * //
@@ -93,7 +93,7 @@ public:
         virtual void calcTSat () override; 
 
         //- Read the transportProperties dictionary and update
-        virtual bool read();
+        virtual bool read() override;
 };
 
 

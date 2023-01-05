@@ -46,12 +46,8 @@ Foam::SaturationPropertiesModels::ClausiusClapeyron::ClausiusClapeyron
 )
 :
     SaturationProperties(typeName, U, phi),
-    R_("R", dimGasConstant, SaturationPropertiesDict_)
-
-    //Cc_(SaturationPropertiesCoeffs_.subDict(type() + "Coeffs").lookup("Cc")),
-    //Cv_(SaturationPropertiesCoeffs_.subDict(type() + "Coeffs").lookup("Cv")),
-{
-}
+    R_("R", dimGasConstant, SaturationPropertiesDict_.subDict("saturationProperties"))
+{ }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
@@ -63,21 +59,16 @@ void Foam::SaturationPropertiesModels::ClausiusClapeyron::calcTSat()
 
 bool Foam::SaturationPropertiesModels::ClausiusClapeyron::read()
 {
-    //if (SaturationProperties::read())
-    //{
-        //SaturationPropertiesCoeffs_ = subDict(type() + "Coeffs");
+    if (SaturationProperties::read())
+    {
+		SaturationPropertiesDict_.subDict("saturationProperties").lookup("R") >> R_;
 
-        SaturationPropertiesDict_.lookup("R") >> R_;
-
-        //mcCoeff_ = Cc_*rho2();
-        //mvCoeff_ = Cv_*rho1();
-
-        return true;
-    //}
-    //else
-    //{
-    //    return false;
-    //}
+    	return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 

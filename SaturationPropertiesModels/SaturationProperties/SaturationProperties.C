@@ -43,6 +43,17 @@ Foam::SaturationProperties::SaturationProperties
     const surfaceScalarField& phi
 )
 :
+	IOdictionary
+	(
+	    IOobject
+        (
+            "phaseChangeProperties", // dictionary name
+            U.time().constant(),     // dict is found in "constant"
+            U.db(),                  // registry for the dict
+            IOobject::MUST_READ,     // must exist, otherwise failure
+            IOobject::NO_WRITE       // dict is only read by the solver
+        )
+	),
     SaturationPropertiesDict_
 	(
 	    IOdictionary
@@ -61,7 +72,7 @@ Foam::SaturationProperties::SaturationProperties
     phi_(phi),
 	p_(U.db().lookupObject<volScalarField>("p")),
 	T_(U.db().lookupObject<volScalarField>("T")),
-    TSatG_("TSatGlobal", dimTemperature, SaturationPropertiesDict_),
+    TSatG_("TSatGlobal", dimTemperature, SaturationPropertiesDict_.subDict("saturationProperties")),
     TSat_
     (
         IOobject
@@ -75,8 +86,8 @@ Foam::SaturationProperties::SaturationProperties
         U.mesh(),
 		TSatG_
     ),
-    pSat_("pSat", dimPressure, SaturationPropertiesDict_),
-    hEvap_("hEvap", dimEnergy/dimMass, SaturationPropertiesDict_)
+    pSat_("pSat", dimPressure, SaturationPropertiesDict_.subDict("saturationProperties")),
+    hEvap_("hEvap", dimEnergy/dimMass, SaturationPropertiesDict_.subDict("saturationProperties"))
 {
 	Info<< "TSatGlobal = "				 << TSatG_ << endl;
 	Info<< "pSat = "		  			 << pSat_ << endl;
@@ -86,6 +97,22 @@ Foam::SaturationProperties::SaturationProperties
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
+bool Foam::SaturationProperties::read()
+{
+    if (regIOobject::read())
+    {
+        SaturationPropertiesDict_ = subDict("saturationProperties");
+        lookup("TSatGlobal") >> TSatG_;
+        lookup("pSat") >> pSat_;
+        lookup("hEvap") >> hEvap_;
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
 
 
