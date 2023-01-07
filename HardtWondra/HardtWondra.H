@@ -81,12 +81,6 @@ class HardtWondra
 
 		dictionary HWdict_;
 
-		//- Flag if condensation enabled
-    	Switch cond_;
-
-		//- Flag if evaporation enabled
-    	Switch evap_;
-
         //- Reference to liquid void fraction field
         const volScalarField& alphalRef_;
 

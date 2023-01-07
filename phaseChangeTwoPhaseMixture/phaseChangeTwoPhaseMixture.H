@@ -64,9 +64,11 @@ protected:
 
         dictionary phaseChangeTwoPhaseMixtureCoeffs_;
 
-private:
+		//- Flag if condensation enabled
+    	Switch cond_;
 
-    // Private data
+		//- Flag if evaporation enabled
+    	Switch evap_;
 	
 	    //- Hardt-Wondra algorithm activation
 		//  default is true
@@ -77,6 +79,10 @@ private:
 
 		//- Pointer to Hardt-Wondra algorithm
 		autoPtr<HardtWondra> HW_;
+
+private:
+
+    // Private data
 
     // Private Member Functions
 
@@ -97,34 +103,23 @@ protected:
 		//- Evaporation mass flux, kg/(m2 s) (+)
 		volScalarField je_;
 
-		//- Condensation mass flux, kg/s (+)
-		volScalarField mCond_;
-		
-		//- Vaporisation mass flux, kg/s (-)
-		volScalarField mEvap_;
-		
-		//- To store condensation volumetric mass flux multiplied by (1-alphal)
-		volScalarField mCondAlphal_;
-		//- To store evaporation volumetric mass flux multiplied by alphal
-		volScalarField mEvapAlphal_;
+		//- Implicit part of the source term for alphaEqn
+		volScalarField alphaSourceSp_;
 
-		//- To store condensation volumetric mass flux NOT multiplied by (1-alphal)
-		volScalarField mCondNoAlphal_;
-		//- To store evaporation volumetric mass flux NOT multiplied by alphal
-		volScalarField mEvapNoAlphal_;
-		
-		//- To store condensation volumetric mass flux NOT multiplied by (T-TSat)
-		volScalarField mCondNoTmTSat_;
-		//- To store evaporation volumetric mass flux NOT multiplied by (T-TSat)
-		volScalarField mEvapNoTmTSat_;
+		//- Explicit part of the source term for alphaEqn
+		volScalarField alphaSourceSu_;
 
-		//- Used in mDotP()
-		volScalarField mCondP_;
-		volScalarField mEvapP_;
+		//- Implicit part of the source term for pEqn
+		volScalarField pSourceSp_;
 
-		//- Used in mDotT()
-		volScalarField mCondT_;
-		volScalarField mEvapT_;
+		//- Explicit part of the source term for pEqn
+		volScalarField pSourceSu_;
+
+		//- Implicit part of the source term for TEqn
+		volScalarField TSourceSp_;
+
+		//- Explicit part of the source term for TEqn
+		volScalarField TSourceSu_;
 
 		Switch printPhaseChange_;
 		
@@ -176,61 +171,70 @@ public:
 
     // Member Functions
 	
+		Switch isCond() const
+		{
+			return cond_;
+		}
 
-        //- Return const-access to the condensation mass flux
-        const volScalarField& mCond() const
-        {
-            return mCond_;
-        }
-		
-        //- Return const-access to the evaporation mass flux
-        const volScalarField& mEvap() const
-        {
-            return mEvap_;
-        }
-	
-        //- Return const-access to the volumetric evaporation mass flux
-        const volScalarField& mEvapNoAlphal() const
-        {
-            return mEvapNoAlphal_;
-        }
+		Switch isEvap() const
+		{
+			return evap_;
+		}
 
 		//- Calculates phase change mass fluxes
 		virtual void j() = 0;
+
+		//- Calculates implicit part of the source term for alphaEqn
+		virtual tmp<volScalarField> alphaSourceSp() = 0;
+
+		//- Calculates explicit part of the source term for alphaEqn
+		virtual tmp<volScalarField> alphaSourceSu() = 0;
+
+		//- Calculates implicit part of the source term for pEqn
+		virtual tmp<volScalarField> pSourceSp() = 0;
+
+		//- Calculates explicit part of the source term for pEqn
+		virtual tmp<volScalarField> pSourceSu() = 0;
+
+		//- Calculates implicit part of the source term for TEqn
+		virtual tmp<volScalarField> TSourceSp() = 0;
+
+		//- Calculates explicit part of the source term for TEqn
+		virtual tmp<volScalarField> TSourceSu() = 0;
 		
-        //- Return the volumetric mass condensation (+) and vaporisation (-) rates 
-		//  as a coefficient to multiply by (1 - alphal) for the condensation rate
-        //  and a coefficient to multiply by alphal for the vaporisation rate
-		//  in alphaEqn. 
-		//  Units are kg/(m3 s)
-        virtual Pair<tmp<volScalarField> > mDotAlphal() const = 0;
+        ////- Return the volumetric mass condensation (+) and vaporisation (-) rates 
+		////  as a coefficient to multiply by (1 - alphal) for the condensation rate
+        ////  and a coefficient to multiply by alphal for the vaporisation rate
+		////  in alphaEqn. 
+		////  Units are kg/(m3 s)
+        //virtual Pair<tmp<volScalarField> > mDotAlphal() const = 0;
 
-        //- Return the volumetric mass condensation (+) and vaporisation (-) rates as coefficients
-		//  to multiply in pEqn
-		//  units are kg/(m3 s)
-        virtual Pair<tmp<volScalarField> > mDotP() const = 0;
+        ////- Return the volumetric mass condensation (+) and vaporisation (-) rates as coefficients
+		////  to multiply in pEqn
+		////  units are kg/(m3 s)
+        //virtual Pair<tmp<volScalarField> > mDotP() const = 0;
 
-        //- Return the mass condensation (-) and vaporisation (+) rates as coefficients
-        //  to multiply by (T - TSat) in TEqn
-		//  units are kg/(m3 s K)
-        virtual Pair<tmp<volScalarField> > mDotT() const = 0;
+        ////- Return the mass condensation (-) and vaporisation (+) rates as coefficients
+        ////  to multiply by (T - TSat) in TEqn
+		////  units are kg/(m3 s K)
+        //virtual Pair<tmp<volScalarField> > mDotT() const = 0;
 
         //- Return the volumetric mass condensation (+) and vaporisation (-) rates 
 		//  as a coefficient to multiply by (1 - alphal) for the condensation rate
         //  and a coefficient to multiply by alphal for the vaporisation rate
 		//  in alphaEqn. 
 		//  units are 1/s
-        Pair<tmp<volScalarField> > vDotAlphal() const;
+        Pair<tmp<volScalarField>> alphaSource();
 
         //- Return the volumetric mass condensation (+) and vaporisation (-) rates as coefficients
 		//  to multiply in pEqn
 		//  units are 1/s
-        Pair<tmp<volScalarField> > vDotP() const;
+        Pair<tmp<volScalarField>> pSource();
 		
         //- Return the mass condensation (-) and vaporisation (+) rates as coefficients
         //  to multiply by (T - TSat) in TEqn
 		//  units are kg/(m s3 K)
-        Pair<tmp<volScalarField> > vDotT() const;
+        Pair<tmp<volScalarField>> TSource();
 
         //- Correct the phaseChange model
 		//  In this function mass transfer model should be implemented.

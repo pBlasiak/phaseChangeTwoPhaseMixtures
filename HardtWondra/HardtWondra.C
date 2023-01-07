@@ -78,8 +78,6 @@ Foam::HardtWondra::HardtWondra
             )
 	    )
 	),
-    cond_{HWdict_.subDict("HardtWondraCoeffs").get<Switch>("condensation")},
-    evap_{HWdict_.subDict("HardtWondraCoeffs").get<Switch>("evaporation")},
 	alphalRef_{alpha1},
 	cutoff_(HWdict_.subDict("HardtWondraCoeffs").getOrDefault<scalar>("cutoff", 1e-3)),
 	spread_(HWdict_.subDict("HardtWondraCoeffs").getOrDefault<scalar>("spread", 3)),
@@ -114,8 +112,6 @@ Foam::HardtWondra::HardtWondra
 	mixtureSatProps_{sat},
 	mixture_{mix}
 {
-	Info<< "Condensation is   "   << cond_   << endl;
-	Info<< "Evaporation is    "   << evap_   << endl;
 	Info<< "Spread is set as: "   << spread_ << endl;
 	Info<< "Cutoff is set as: "   << cutoff_ << endl;
 }
@@ -165,7 +161,7 @@ void Foam::HardtWondra::spread
 		N = intCprim/intAlphalCprim;
 	}
 	
-	if (cond_)
+	if (mixture_.isCond())
 	{
 		// 5) phi0 Eqn. (13)
 		volScalarField psi0l = (N*jc*(1-limitedAlphal_)*magGradLimitedAlphal_)();

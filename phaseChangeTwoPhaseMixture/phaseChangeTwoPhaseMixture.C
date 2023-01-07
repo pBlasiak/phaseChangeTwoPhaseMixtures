@@ -63,6 +63,8 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
             )
 	    )
 	),
+    cond_{phaseChangeTwoPhaseMixtureCoeffs_.get<Switch>("condensation")},
+    evap_{phaseChangeTwoPhaseMixtureCoeffs_.get<Switch>("evaporation")},
 	isHW_(phaseChangeTwoPhaseMixtureCoeffs_.getOrDefault<Switch>("HardtWondra", true)),
     satProps_
     (
@@ -100,228 +102,234 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
         U.mesh(),
         dimensionedScalar("je", dimensionSet(1, -2, -1, 0, 0, 0, 0), 0.0)
     ),
-    mCond_
-    (
-        IOobject
-        (
-            "mCond",
-            U.time().timeName(),
-            U.db(),
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-        ),
-        U.mesh(),
-        dimensionedScalar("mCond", dimensionSet(1, 0, -1, 0, 0, 0, 0), 0.0)
-    ),
-    mEvap_
-    (
-        IOobject
-        (
-            "mEvap",
-            U.time().timeName(),
-            U.db(),
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-        ),
-        U.mesh(),
-        dimensionedScalar("mEvap", dimensionSet(1, 0, -1, 0, 0, 0, 0), 0.0)
-    ),
-	mCondAlphal_
+	//TODO: nie wiem czy jednostki OK
+	alphaSourceSp_
 	(
 	    IOobject
 	    (
-	        "mCondAlphal",
+	        "alphaSourceSp",
 	        U.time().timeName(),
 	        U.db(),
 			IOobject::NO_READ,
 			IOobject::NO_WRITE
 	    ),
 	    U.mesh(),
-	    dimensionedScalar("mCondAlphal", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
+	    dimensionedScalar("alphaSourceSp", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
 	),
-	mEvapAlphal_
+	alphaSourceSu_
 	(
 	    IOobject
 	    (
-	        "mEvapAlphal",
+	        "alphaSourceSu",
 	        U.time().timeName(),
 	        U.db(),
 			IOobject::NO_READ,
 			IOobject::NO_WRITE
 	    ),
 	    U.mesh(),
-	    dimensionedScalar("mEvapAlphal", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
+	    dimensionedScalar("alphaSourceSu", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
 	),
-	mCondNoAlphal_
+	pSourceSp_
 	(
 	    IOobject
 	    (
-	        "mCondNoAlphal",
+	        "pSourceSp",
 	        U.time().timeName(),
 	        U.db(),
 			IOobject::NO_READ,
 			IOobject::NO_WRITE
 	    ),
 	    U.mesh(),
-	    dimensionedScalar("mCondNoAlphal", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
+	    dimensionedScalar("pSourceSp", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
 	),
-	mEvapNoAlphal_
+	pSourceSu_
 	(
 	    IOobject
 	    (
-	        "mEvapNoAlphal",
+	        "pSourceSu",
 	        U.time().timeName(),
 	        U.db(),
 			IOobject::NO_READ,
 			IOobject::NO_WRITE
 	    ),
 	    U.mesh(),
-	    dimensionedScalar("mEvapNoAlphal", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
+	    dimensionedScalar("pSourceSu", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
 	),
-	mCondNoTmTSat_
+	TSourceSp_
 	(
 	    IOobject
 	    (
-	        "mCondNoTmTSat",
+	        "TSourceSp",
 	        U.time().timeName(),
 	        U.db(),
 			IOobject::NO_READ,
 			IOobject::NO_WRITE
 	    ),
 	    U.mesh(),
-	    dimensionedScalar("mCondNoTmTSat", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
+	    dimensionedScalar("TSourceSp", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
 	),
-	mEvapNoTmTSat_
+	TSourceSu_
 	(
 	    IOobject
 	    (
-	        "mEvapNoTmTSat",
+	        "TSourceSu",
 	        U.time().timeName(),
 	        U.db(),
 			IOobject::NO_READ,
 			IOobject::NO_WRITE
 	    ),
 	    U.mesh(),
-	    dimensionedScalar("mEvapNoTmTSat", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
+	    dimensionedScalar("TSourceSu", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
 	),
-	mCondP_
-	(
-	    IOobject
-	    (
-	        "mCondP",
-	        U.time().timeName(),
-	        U.db(),
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-	    ),
-	    U.mesh(),
-	    dimensionedScalar("mCondP", dimensionSet(0, -2, 1, 0, 0, 0, 0), 0.0)
-	),
-	mEvapP_
-	(
-	    IOobject
-	    (
-	        "mEvapP",
-	        U.time().timeName(),
-	        U.db(),
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-	    ),
-	    U.mesh(),
-	    dimensionedScalar("mEvapP", dimensionSet(0, -2, 1, 0, 0, 0, 0), 0.0)
-	),
-	mCondT_
-	(
-	    IOobject
-	    (
-	        "mCondT",
-	        U.time().timeName(),
-	        U.db(),
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-	    ),
-	    U.mesh(),
-	    dimensionedScalar("mCondT", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
-	),
-	mEvapT_
-	(
-	    IOobject
-	    (
-	        "mEvapT",
-	        U.time().timeName(),
-	        U.db(),
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-	    ),
-	    U.mesh(),
-	    dimensionedScalar("mEvapT", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
-	),
+	//mCondNoTmTSat_
+	//(
+	//    IOobject
+	//    (
+	//        "mCondNoTmTSat",
+	//        U.time().timeName(),
+	//        U.db(),
+	//		IOobject::NO_READ,
+	//		IOobject::NO_WRITE
+	//    ),
+	//    U.mesh(),
+	//    dimensionedScalar("mCondNoTmTSat", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
+	//),
+	//mEvapNoTmTSat_
+	//(
+	//    IOobject
+	//    (
+	//        "mEvapNoTmTSat",
+	//        U.time().timeName(),
+	//        U.db(),
+	//		IOobject::NO_READ,
+	//		IOobject::NO_WRITE
+	//    ),
+	//    U.mesh(),
+	//    dimensionedScalar("mEvapNoTmTSat", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
+	//),
+	//mCondP_
+	//(
+	//    IOobject
+	//    (
+	//        "mCondP",
+	//        U.time().timeName(),
+	//        U.db(),
+	//		IOobject::NO_READ,
+	//		IOobject::NO_WRITE
+	//    ),
+	//    U.mesh(),
+	//    dimensionedScalar("mCondP", dimensionSet(0, -2, 1, 0, 0, 0, 0), 0.0)
+	//),
+	//mEvapP_
+	//(
+	//    IOobject
+	//    (
+	//        "mEvapP",
+	//        U.time().timeName(),
+	//        U.db(),
+	//		IOobject::NO_READ,
+	//		IOobject::NO_WRITE
+	//    ),
+	//    U.mesh(),
+	//    dimensionedScalar("mEvapP", dimensionSet(0, -2, 1, 0, 0, 0, 0), 0.0)
+	//),
+	//mCondT_
+	//(
+	//    IOobject
+	//    (
+	//        "mCondT",
+	//        U.time().timeName(),
+	//        U.db(),
+	//		IOobject::NO_READ,
+	//		IOobject::NO_WRITE
+	//    ),
+	//    U.mesh(),
+	//    dimensionedScalar("mCondT", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
+	//),
+	//mEvapT_
+	//(
+	//    IOobject
+	//    (
+	//        "mEvapT",
+	//        U.time().timeName(),
+	//        U.db(),
+	//		IOobject::NO_READ,
+	//		IOobject::NO_WRITE
+	//    ),
+	//    U.mesh(),
+	//    dimensionedScalar("mEvapT", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
+	//),
 	printPhaseChange_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("printPhaseChange")))
 {
 	HW_.reset
 	(
 		new HardtWondra(alpha1(), satProps_.ref(), *this)
 	);
-	Info<< "printPhaseChange = "         << printPhaseChange_ << endl;
+	Info<< "Condensation is   "   << cond_   << endl;
+	Info<< "Evaporation is    "   << evap_   << endl;
 	Info<< "Hardt-Wondra algorithm is: " << isHW_ << endl;
+	Info<< "printPhaseChange = "         << printPhaseChange_ << endl;
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-Foam::Pair<Foam::tmp<Foam::volScalarField> >
-Foam::phaseChangeTwoPhaseMixture::vDotAlphal() const
+Foam::Pair<Foam::tmp<Foam::volScalarField>>
+Foam::phaseChangeTwoPhaseMixture::alphaSource() 
 {
     volScalarField alphalCoeff(1.0/rho1() - alpha1()*(1.0/rho1() - 1.0/rho2()));
-    Pair<tmp<volScalarField>> mDotAlphal = this->mDotAlphal();
+    tmp<volScalarField> Sp = this->alphaSourceSp();
+    tmp<volScalarField> Su = this->alphaSourceSu();
 
     return Pair<tmp<volScalarField>>
     (
-        alphalCoeff*mDotAlphal[0],
-        alphalCoeff*mDotAlphal[1]
+        alphalCoeff*Sp,
+        alphalCoeff*Su
     );
 }
 
-Foam::Pair<Foam::tmp<Foam::volScalarField> >
-Foam::phaseChangeTwoPhaseMixture::vDotP() const
+Foam::Pair<Foam::tmp<Foam::volScalarField>>
+Foam::phaseChangeTwoPhaseMixture::pSource() 
 {
     dimensionedScalar pCoeff(1.0/rho1() - 1.0/rho2());
-    Pair<tmp<volScalarField> > mDotP = this->mDotP();
+    tmp<volScalarField> Sp = this->pSourceSp();
+    tmp<volScalarField> Su = this->pSourceSu();
 
-    return Pair<tmp<volScalarField> >
+    return Pair<tmp<volScalarField>>
 	(
-	    pCoeff*mDotP[0], 
-		pCoeff*mDotP[1]
+	    pCoeff*Sp, 
+		pCoeff*Su
 	);
 }
 
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
-Foam::phaseChangeTwoPhaseMixture::vDotT() const
+Foam::phaseChangeTwoPhaseMixture::TSource()
 {
-	Pair<tmp<volScalarField> > mDotT = this->mDotT();
+	tmp<volScalarField> Sp = this->TSourceSp();
+	tmp<volScalarField> Su = this->TSourceSu();
 
-	return Pair<tmp<volScalarField> >
+	return Pair<tmp<volScalarField>>
 	(
-			hEvap_*mDotT[0],
-			hEvap_*mDotT[1]
+			satProps_->hEvap()*Sp,
+			satProps_->hEvap()*Su
 	);
 }
 
 void Foam::phaseChangeTwoPhaseMixture::correct()
 {
 	thermalIncompressibleTwoPhaseMixture::correct();
-	//TODO
-	//Dodac satProps_->correct() zamiast calcTSatLocal
-	calcTSatLocal();
+
+	satProps_->calcTSat();
 
 
     const fvMesh& mesh = alpha1().mesh();
 
 	if (printPhaseChange_)
 	{
-    	Info<< "****Condensation rate: "
-    	    << gSum((mCondAlphal_*mesh.V())())*satProps_->hEvap().value() << " W" << endl;
-    	Info<< "****Evaporation rate: "
-    	    << gSum((mEvapAlphal_*mesh.V())())*satProps_->hEvap().value() << " W" << endl;
+		//TODO: zastanowic sie jak to liczyc i czy jest potrzebne
+    	//Info<< "****Condensation rate: "
+    	//    << gSum((mCondAlphal_*mesh.V())())*satProps_->hEvap().value() << " W" << endl;
+    	//Info<< "****Evaporation rate: "
+    	//    << gSum((mEvapAlphal_*mesh.V())())*satProps_->hEvap().value() << " W" << endl;
 	}
 }
 

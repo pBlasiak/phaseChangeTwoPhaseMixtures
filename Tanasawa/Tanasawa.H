@@ -72,7 +72,10 @@ class Tanasawa
         dimensionedScalar R_;
 
 		//- Constant part of the model coefficients
-        dimensionedScalar mCoeff_;
+        dimensionedScalar RintCoeff_;
+
+		//- Interfacial heat transfer resistance
+		volScalarField Rint_;
 
 		
     // Private member functions
@@ -110,22 +113,44 @@ public:
             return R_;
         }
 
-        //- Return the volumetric mass condensation (+) and vaporisation (-) rates 
-		//  as a coefficient to multiply by (1 - alphal) for the condensation rate
-        //  and a coefficient to multiply by alphal for the vaporisation rate
-		//  in alphaEqn. 
-		//  Units are kg/(m3 s)
-        virtual Pair<tmp<volScalarField> > mDotAlphal() const override;
+        //- Return const-access to the interfacial heat transfer resistance
+        const volScalarField& Rint() const
+        {
+            return Rint_;
+        }
 
-        //- Return the volumetric mass condensation (+) and vaporisation (-) rates as coefficients
-		//  to multiply in pEqn
-		//  units are kg/(m3 s)
-        virtual Pair<tmp<volScalarField> > mDotP() const override;
+        //- Return const-access to the temperature field
+		const volScalarField& T() const
+		{
+			return satProps_->T();
+		}
 
-        //- Return the mass condensation (-) and vaporisation (+) rates as coefficients
-        //  to multiply by (T - TSat) in TEqn
-		//  units are kg/(m3 s K)
-        virtual Pair<tmp<volScalarField> > mDotT() const override;
+        //- Return const-access to the saturation temperature
+		const volScalarField& TSat() const
+		{
+			return satProps_->TSat();
+		}
+
+		//- Calculates phase change mass fluxes
+		virtual void j() override;
+
+		//- Calculates implicit part of the source term for alphaEqn
+		virtual tmp<volScalarField> alphaSourceSp() override;
+
+		//- Calculates explicit part of the source term for alphaEqn
+		virtual tmp<volScalarField> alphaSourceSu() override;
+
+		//- Calculates implicit part of the source term for pEqn
+		virtual tmp<volScalarField> pSourceSp() override;
+
+		//- Calculates explicit part of the source term for pEqn
+		virtual tmp<volScalarField> pSourceSu() override;
+
+		//- Calculates implicit part of the source term for TEqn
+		virtual tmp<volScalarField> TSourceSp() override;
+
+		//- Calculates explicit part of the source term for TEqn
+		virtual tmp<volScalarField> TSourceSu() override;
 
         //- Correct the phaseChange model
 		//  In this function mass transfer model should be implemented.
