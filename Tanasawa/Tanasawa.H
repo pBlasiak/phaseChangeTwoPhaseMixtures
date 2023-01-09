@@ -113,23 +113,11 @@ public:
             return R_;
         }
 
-        //- Return const-access to the interfacial heat transfer resistance
-        const volScalarField& Rint() const
+        //- Calculates the interfacial heat transfer resistance
+        void calcRint() 
         {
-            return Rint_;
+			Rint_ = RintCoeff_*pow(TSat(), 3./2);
         }
-
-        //- Return const-access to the temperature field
-		const volScalarField& T() const
-		{
-			return satProps_->T();
-		}
-
-        //- Return const-access to the saturation temperature
-		const volScalarField& TSat() const
-		{
-			return satProps_->TSat();
-		}
 
 		//- Calculates phase change mass fluxes
 		virtual void j() override;

@@ -57,7 +57,7 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::Tanasawa
     gamma_("gamma", phaseChangeTwoPhaseMixtureCoeffs_.subDict(type() + "Coeffs")),
     R_("R", dimGasConstant, phaseChangeTwoPhaseMixtureCoeffs_),
    	RintCoeff_{(2.0 - gamma_)*sqrt(2.0*M_PI*R_)/(2.0*gamma_*pow(satProps_->hEvap(),2)*rho2())},
-	Rint_{RintCoeff_*pow(satProps_->TSat(), 3./2)}
+	Rint_{RintCoeff_*pow(TSat(), 3./2)}
 {
 	Info<< "Tanasawa model settings:  " << endl;
 	Info<< "gamma = "		  << gamma_ << endl;
@@ -72,7 +72,7 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::j()
 	// Minus sign "-" to provide mc > 0  and mv < 0
 	if (cond_)
 	{
-		jc_ = -neg(T() - TSat())*(T() - TSat())/Rint_;
+		jc_ = -neg(T() - TSat())*(T() - TSat())/Rint_/hEvap();
 	}
 
 	//if (evap_)
@@ -85,31 +85,61 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::j()
 	//}
 }
 
-Foam::Pair<Foam::tmp<Foam::volScalarField>>
-Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotAlphal() const
+Foam::tmp<Foam::volScalarField>
+Foam::phaseChangeTwoPhaseMixtures::Tanasawa::alphaSourceSp() 
 {
-	return Pair<tmp<volScalarField>>
-	(
-		tmp<volScalarField>(-mCondAlphal_),
-		tmp<volScalarField>(mEvapNoAlphal_)
-    );
+	alphaSourceSp_ = (je_ - jc_)*HW_->magGradLimitedAlphal();
+	return alphaSourceSp_;
+	//return Pair<tmp<volScalarField>>
+	//(
+	//	tmp<volScalarField>(-mCondAlphal_),
+	//	tmp<volScalarField>(mEvapNoAlphal_)
+    //);
 }
 
-Foam::Pair<Foam::tmp<Foam::volScalarField> >
-Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotP() const
+Foam::tmp<Foam::volScalarField>
+Foam::phaseChangeTwoPhaseMixtures::Tanasawa::alphaSourceSu() 
 {
-	return Pair<tmp<volScalarField> >
-	(
-	 // New
-        //-mCondAlphal_*neg(T_-TSat_)/max(p_-pSat_,1E-6*pSat_),
-	    //mEvapAlphal_*pos(T_-TSat_)/max(pSat_-p_,1E-6*pSat_)
-	 // implicit implementation results in zero velocity at the interface
-        //mCondAlphal_*pos(p_-pSat_)/max(p_-pSat_,1E-6*pSat_),
-	    //mEvapAlphal_*neg(p_-pSat_)/max(pSat_-p_,1E-6*pSat_)
-	 // explicit implementation results in large errors
-        -mCondAlphal_,
-	    mEvapAlphal_
-	);
+	alphaSourceSu_ =  jc_*HW_->magGradLimitedAlphal();
+	return alphaSourceSu_;
+	//return Pair<tmp<volScalarField>>
+	//(
+	//	tmp<volScalarField>(-mCondAlphal_),
+	//	tmp<volScalarField>(mEvapNoAlphal_)
+    //);
+}
+
+Foam::tmp<Foam::volScalarField>
+Foam::phaseChangeTwoPhaseMixtures::Tanasawa::pSourceSp()
+{
+	return pSourceSp_;
+	//return Pair<tmp<volScalarField> >
+	//(
+	// // New
+    //    //-mCondAlphal_*neg(T_-TSat_)/max(p_-pSat_,1E-6*pSat_),
+	//    //mEvapAlphal_*pos(T_-TSat_)/max(pSat_-p_,1E-6*pSat_)
+	// // implicit implementation results in zero velocity at the interface
+    //    //mCondAlphal_*pos(p_-pSat_)/max(p_-pSat_,1E-6*pSat_),
+	//    //mEvapAlphal_*neg(p_-pSat_)/max(pSat_-p_,1E-6*pSat_)
+	// // explicit implementation results in large errors
+    //    -mCondAlphal_,
+	//    mEvapAlphal_
+	//);
+}
+
+Foam::tmp<Foam::volScalarField>
+Foam::phaseChangeTwoPhaseMixtures::Tanasawa::pSourceSu()
+{
+	if (isHardtWondra())
+	{
+		HW_->spread(jc_, je_);
+		return HW_->rhoSourcel(); 
+	}
+	else
+	{
+		pSourceSu_ = (jc_ - je_)*HW_->magGradLimitedAlphal();
+		return pSourceSu_;
+	}
 }
 
 Foam::Pair<Foam::tmp<Foam::volScalarField> >
@@ -126,7 +156,8 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::correct()
 {
 	phaseChangeTwoPhaseMixture::correct();
 
-
+	calcRint(); 
+	j();
 }
 
 bool Foam::phaseChangeTwoPhaseMixtures::Tanasawa::read()
@@ -136,7 +167,7 @@ bool Foam::phaseChangeTwoPhaseMixtures::Tanasawa::read()
         phaseChangeTwoPhaseMixtureCoeffs_ = subDict(type() + "Coeffs");
         phaseChangeTwoPhaseMixtureCoeffs_.lookup("gamma") >> gamma_;
 
-		mCoeff_ = 2.0*gamma_/(2.0 - gamma_)/sqrt(2.0*M_PI*R_)*hEvap_*rho2();
+		RintCoeff_ = (2.0 - gamma_)*sqrt(2.0*M_PI*R_)/(2.0*gamma_*pow(satProps_->hEvap(),2)*rho2());
 
         return true;
     }

@@ -181,6 +181,29 @@ public:
 			return evap_;
 		}
 
+		Switch isHardtWondra() const
+		{
+			return isHW_;
+		}
+
+        //- Return const-access to the temperature field
+		const volScalarField& T() const
+		{
+			return satProps_->T();
+		}
+
+        //- Return const-access to the saturation temperature
+		const volScalarField& TSat() const
+		{
+			return satProps_->TSat();
+		}
+
+        //- Return const-access to the enthalpy of evaporation
+		const dimensionedScalar& hEvap() const
+		{
+			return satProps_->hEvap();
+		}
+
 		//- Calculates phase change mass fluxes
 		virtual void j() = 0;
 

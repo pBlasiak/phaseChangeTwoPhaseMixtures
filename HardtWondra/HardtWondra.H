@@ -92,6 +92,8 @@ class HardtWondra
 		//  default is 3
         scalar spread_;
 
+		//TODO: czy to jest potrzebne? Czy nie wprowadza bledow?
+		//      czy nie powinno byc uzywane "raw alpha1()"?
 		//- Limited liquid void fraction between 0 and 1 
 		volScalarField limitedAlphal_;
 
@@ -171,6 +173,17 @@ public:
 
 
     // Member Functions
+		
+		const volScalarField& magGradLimitedAlphal() const
+		{
+			return magGradLimitedAlphal_;
+		}
+
+		const volScalarField& rhoSourcel() const
+		{
+			return rhoSourcel_;
+		}
+
 	    //- Hardt-Wondra algorithm
 		//  OLD implementation WAS:
 		//  - no spread mass source terms in alphaEqn
@@ -201,6 +214,8 @@ public:
 			const volScalarField& condMassFlux, 
 			const volScalarField& evapMassFlux
 		);
+
+		void correct();
 
 		void read();
 

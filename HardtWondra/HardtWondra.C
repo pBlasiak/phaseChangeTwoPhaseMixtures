@@ -140,7 +140,8 @@ void Foam::HardtWondra::spread
 )
 {
 	// 1) Calculate |grad(alphal)|
-	calcMagGradLimitedAlphal();
+	// na razie robie ze to jest liczone w HardtWondra::correct()
+	//calcMagGradLimitedAlphal();
 	
 	//- Smearing of source term field
 	dimensionedScalar DPsi
@@ -345,6 +346,11 @@ void Foam::HardtWondra::spread
 	//		}
 	//	}
 	//}
+}
+
+void Foam::HardtWondra::correct()
+{
+	calcMagGradLimitedAlphal();
 }
 
 //TODO

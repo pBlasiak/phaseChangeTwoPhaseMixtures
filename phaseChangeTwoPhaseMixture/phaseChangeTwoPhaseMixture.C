@@ -301,7 +301,7 @@ Foam::phaseChangeTwoPhaseMixture::pSource()
 	);
 }
 
-Foam::Pair<Foam::tmp<Foam::volScalarField> >
+Foam::Pair<Foam::tmp<Foam::volScalarField>>
 Foam::phaseChangeTwoPhaseMixture::TSource()
 {
 	tmp<volScalarField> Sp = this->TSourceSp();
@@ -320,6 +320,7 @@ void Foam::phaseChangeTwoPhaseMixture::correct()
 
 	satProps_->calcTSat();
 
+	HW_->correct(); 
 
     const fvMesh& mesh = alpha1().mesh();
 
