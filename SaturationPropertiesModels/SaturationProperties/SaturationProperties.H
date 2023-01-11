@@ -121,8 +121,7 @@ public:
         static autoPtr<SaturationProperties> New
         (
             const volVectorField& U,
-            const surfaceScalarField& phi,
-			const word& satProp
+            const surfaceScalarField& phi
         );
 
 

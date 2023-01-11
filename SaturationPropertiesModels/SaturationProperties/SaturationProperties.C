@@ -24,7 +24,6 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "SaturationProperties.H"
-//#include "thermalIncompressibleTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -72,7 +71,7 @@ Foam::SaturationProperties::SaturationProperties
     phi_(phi),
 	p_(U.db().lookupObject<volScalarField>("p")),
 	T_(U.db().lookupObject<volScalarField>("T")),
-    TSatG_("TSatGlobal", dimTemperature, SaturationPropertiesDict_.subDict("saturationProperties")),
+    TSatG_("TSatGlobal", dimTemperature, SaturationPropertiesDict_.subDict(type + "SatPropModel")),
     TSat_
     (
         IOobject
@@ -86,8 +85,8 @@ Foam::SaturationProperties::SaturationProperties
         U.mesh(),
 		TSatG_
     ),
-    pSat_("pSat", dimPressure, SaturationPropertiesDict_.subDict("saturationProperties")),
-    hEvap_("hEvap", dimEnergy/dimMass, SaturationPropertiesDict_.subDict("saturationProperties"))
+    pSat_("pSat", dimPressure, SaturationPropertiesDict_.subDict(type + "SatPropModel")),
+    hEvap_("hEvap", dimEnergy/dimMass, SaturationPropertiesDict_.subDict(type + "SatPropModel"))
 {
 	Info<< "TSatGlobal = "				 << TSatG_ << endl;
 	Info<< "pSat = "		  			 << pSat_ << endl;
@@ -101,7 +100,7 @@ bool Foam::SaturationProperties::read()
 {
     if (regIOobject::read())
     {
-        SaturationPropertiesDict_ = subDict("saturationProperties");
+        SaturationPropertiesDict_ = subDict(type() + "SatPropModel");
         lookup("TSatGlobal") >> TSatG_;
         lookup("pSat") >> pSat_;
         lookup("hEvap") >> hEvap_;

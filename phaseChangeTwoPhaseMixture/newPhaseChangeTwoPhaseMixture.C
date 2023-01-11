@@ -24,7 +24,6 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "phaseChangeTwoPhaseMixture.H"
-#include "incompressibleTwoPhaseMixture.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

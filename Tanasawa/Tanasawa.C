@@ -142,14 +142,24 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::pSourceSu()
 	}
 }
 
-Foam::Pair<Foam::tmp<Foam::volScalarField> >
-Foam::phaseChangeTwoPhaseMixtures::Tanasawa::mDotT() const
+Foam::tmp<Foam::volScalarField>
+Foam::phaseChangeTwoPhaseMixtures::Tanasawa::TSourceSp() 
 {
-	return Pair<tmp<volScalarField> >
-	(
-	    tmp<volScalarField>(mCondNoTmTSat_),
-	    tmp<volScalarField>(mEvapNoTmTSat_)
-	);
+	return TSourceSp_;
+}
+
+Foam::tmp<Foam::volScalarField>
+Foam::phaseChangeTwoPhaseMixtures::Tanasawa::TSourceSu() 
+{
+	if (isHardtWondra())
+	{
+		return HW_->hSourcel(); 
+	}
+	else
+	{
+		TSourceSu_ = (jc_ - je_)*HW_->magGradLimitedAlphal()*hEvap()*TSat();
+		return TSourceSu_;
+	}
 }
 
 void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::correct()

@@ -66,13 +66,13 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
     cond_{phaseChangeTwoPhaseMixtureCoeffs_.get<Switch>("condensation")},
     evap_{phaseChangeTwoPhaseMixtureCoeffs_.get<Switch>("evaporation")},
 	isHW_(phaseChangeTwoPhaseMixtureCoeffs_.getOrDefault<Switch>("HardtWondra", true)),
+    //satProps_(autoPtr<SaturationProperties>()),
     satProps_
     (
         SaturationProperties::New
         (
             U,
-            phi, 
-			phaseChangeTwoPhaseMixtureCoeffs_.get<word>("satPropModel")
+            phi
         )
     ),
     HW_(autoPtr<HardtWondra>()),
@@ -261,6 +261,14 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 	//),
 	printPhaseChange_(readBool(phaseChangeTwoPhaseMixtureCoeffs_.lookup("printPhaseChange")))
 {
+    //satProps_.reset
+    //(
+    //    SaturationProperties::New
+    //    (
+    //        U,
+    //        phi
+    //    )
+    //),
 	HW_.reset
 	(
 		new HardtWondra(alpha1(), satProps_.ref(), *this)

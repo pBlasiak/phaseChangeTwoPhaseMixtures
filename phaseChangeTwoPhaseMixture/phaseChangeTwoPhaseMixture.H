@@ -42,7 +42,8 @@ SourceFiles
 #include "dimensionedScalar.H"
 #include "autoPtr.H"
 #include "Pair.H"
-#include "SaturationPropertiesModels/SaturationProperties/SaturationProperties.H"
+#include "SaturationProperties.H"
+//#include "SaturationPropertiesModels/SaturationProperties/SaturationProperties.H"
 #include "HardtWondra.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

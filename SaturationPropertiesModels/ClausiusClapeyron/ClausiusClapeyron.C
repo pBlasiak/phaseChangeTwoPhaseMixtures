@@ -46,7 +46,7 @@ Foam::SaturationPropertiesModels::ClausiusClapeyron::ClausiusClapeyron
 )
 :
     SaturationProperties(typeName, U, phi),
-    R_("R", dimGasConstant, SaturationPropertiesDict_.subDict("saturationProperties"))
+    R_("R", dimGasConstant, SaturationPropertiesDict_.subDict(type() + "SatPropModel"))
 { }
 
 
@@ -61,7 +61,7 @@ bool Foam::SaturationPropertiesModels::ClausiusClapeyron::read()
 {
     if (SaturationProperties::read())
     {
-		SaturationPropertiesDict_.subDict("saturationProperties").lookup("R") >> R_;
+		SaturationPropertiesDict_.subDict(type() + "SatPropModel").lookup("R") >> R_;
 
     	return true;
     }

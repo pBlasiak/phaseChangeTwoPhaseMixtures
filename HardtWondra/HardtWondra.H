@@ -55,7 +55,8 @@ SourceFiles
 
 #include "fvCFD.H"
 #include "typeInfo.H"
-#include "SaturationPropertiesModels/SaturationProperties/SaturationProperties.H"
+#include "SaturationProperties.H"
+//#include "SaturationPropertiesModels/SaturationProperties/SaturationProperties.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -182,6 +183,11 @@ public:
 		const volScalarField& rhoSourcel() const
 		{
 			return rhoSourcel_;
+		}
+
+		const volScalarField& hSourcel() const
+		{
+			return hSourcel_;
 		}
 
 	    //- Hardt-Wondra algorithm

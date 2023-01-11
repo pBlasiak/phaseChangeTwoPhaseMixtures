@@ -36,8 +36,7 @@ SourceFiles
 #ifndef Constant_H
 #define Constant_H
 
-#include "../SaturationProperties/SaturationProperties.H"
-#include "thermalIncompressibleTwoPhaseMixture.H"
+#include "SaturationProperties.H"
 
 // * * * * * * * * * * * * * * * * *  * * * * * * * * * * * * * * * * //
 

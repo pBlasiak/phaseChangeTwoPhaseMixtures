@@ -3,6 +3,8 @@ EXE_INC = \
     -I$(LIB_SRC)/transportModels \
     -I$(LIB_SRC)/transportModels/incompressible/lnInclude \
     -I../smoothedInterfaceProperties/lnInclude \
+    -I./SaturationPropertiesModels/SaturationProperties \
+    -I./HardtWondra \
     -I$(LIB_SRC)/transportModels/geometricVoF/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
     -I$(LIB_SRC)/finiteVolume/lnInclude

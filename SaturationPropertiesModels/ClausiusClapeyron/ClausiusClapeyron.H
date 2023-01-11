@@ -36,8 +36,7 @@ SourceFiles
 #ifndef ClausiusClapeyron_H
 #define ClausiusClapeyron_H
 
-#include "../SaturationProperties/SaturationProperties.H"
-#include "thermalIncompressibleTwoPhaseMixture.H"
+#include "SaturationProperties.H"
 
 // * * * * * * * * * * * * * * * * *  * * * * * * * * * * * * * * * * //
 
