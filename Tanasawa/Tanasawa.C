@@ -73,6 +73,8 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::j()
 	if (cond_)
 	{
 		jc_ = -neg(T() - TSat())*(T() - TSat())/Rint_/hEvap();
+		const dimensionedScalar T1("T1", dimTemperature, 1);
+		je_ = -neg(T() - TSat())/Rint_/hEvap()*T1;
 	}
 
 	//if (evap_)
@@ -88,7 +90,7 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::j()
 Foam::tmp<Foam::volScalarField>
 Foam::phaseChangeTwoPhaseMixtures::Tanasawa::alphaSourceSp() 
 {
-	alphaSourceSp_ = (jc_ + je_)*HW_->magGradLimitedAlphal();
+	alphaSourceSp_ = jc_*HW_->magGradLimitedAlphal();
 	return alphaSourceSp_;
 	//return Pair<tmp<volScalarField>>
 	//(
@@ -100,7 +102,7 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::alphaSourceSp()
 Foam::tmp<Foam::volScalarField>
 Foam::phaseChangeTwoPhaseMixtures::Tanasawa::alphaSourceSu() 
 {
-	alphaSourceSu_ =  jc_*HW_->magGradLimitedAlphal();
+	//alphaSourceSu_ =  jc_*HW_->magGradLimitedAlphal();
 	return alphaSourceSu_;
 	//return Pair<tmp<volScalarField>>
 	//(
@@ -112,7 +114,16 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::alphaSourceSu()
 Foam::tmp<Foam::volScalarField>
 Foam::phaseChangeTwoPhaseMixtures::Tanasawa::pSourceSp()
 {
-	return pSourceSp_;
+	if (isHardtWondra())
+	{
+		HW_->spread(jc_, je_);
+		return HW_->rhoSourcel(); 
+	}
+	else
+	{
+		pSourceSu_ = (jc_ - je_)*HW_->magGradLimitedAlphal();
+		return pSourceSu_;
+	}
 	//return Pair<tmp<volScalarField> >
 	//(
 	// // New
@@ -130,26 +141,11 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::pSourceSp()
 Foam::tmp<Foam::volScalarField>
 Foam::phaseChangeTwoPhaseMixtures::Tanasawa::pSourceSu()
 {
-	if (isHardtWondra())
-	{
-		HW_->spread(jc_, je_);
-		return HW_->rhoSourcel(); 
-	}
-	else
-	{
-		pSourceSu_ = (jc_ - je_)*HW_->magGradLimitedAlphal();
-		return pSourceSu_;
-	}
+	return pSourceSu_;
 }
 
 Foam::tmp<Foam::volScalarField>
 Foam::phaseChangeTwoPhaseMixtures::Tanasawa::TSourceSp() 
-{
-	return TSourceSp_;
-}
-
-Foam::tmp<Foam::volScalarField>
-Foam::phaseChangeTwoPhaseMixtures::Tanasawa::TSourceSu() 
 {
 	if (isHardtWondra())
 	{
@@ -157,9 +153,15 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::TSourceSu()
 	}
 	else
 	{
-		TSourceSu_ = (jc_ - je_)*HW_->magGradLimitedAlphal()*hEvap()*TSat();
-		return TSourceSu_;
+		TSourceSp_ = (jc_ - je_)*HW_->magGradLimitedAlphal()*hEvap()*TSat();
+		return TSourceSp_;
 	}
+}
+
+Foam::tmp<Foam::volScalarField>
+Foam::phaseChangeTwoPhaseMixtures::Tanasawa::TSourceSu() 
+{
+	return TSourceSu_;
 }
 
 void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::correct()

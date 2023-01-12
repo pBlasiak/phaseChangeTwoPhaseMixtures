@@ -107,7 +107,8 @@ Foam::HardtWondra::HardtWondra
 			IOobject::NO_WRITE
 	    ),
 	    alpha1.mesh(),
-	    dimensionedScalar("hSourcel", dimensionSet(1, -1, -3, 0, 0, 0, 0), 0.0)
+	    //dimensionedScalar("hSourcel", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
+	    dimensionedScalar("hSourcel", dimensionSet(1, -1, -3, -1, 0, 0, 0), 0.0)
 	),
 	mixtureSatProps_{sat},
 	mixture_{mix}
@@ -256,12 +257,16 @@ void Foam::HardtWondra::spread
 		//      na razie jest po prostu na odwrot niz w artykule HW
 		//      Pozniej mozna tez pomyslec jak wykorzystac fvm::Sp
 		//- 9) Calculates enthalpy source term
+		const dimensionedScalar T1("T1", dimTemperature, 1);
+		volScalarField psi0ll = (N*je*(1-limitedAlphal_)*magGradLimitedAlphal_/T1)();
+		Info<< "IIIIIIIIIIIIIIIIII" << endl;
 		hSourcel_ = 
 		//(
 		//   - Nv*(1.0-limitedAlphal_)*mixture_.cp2()
 		//   + Nl*limitedAlphal_*mixture_.cp1()
 		//)*mixtureSatProps_.T()*psil 
-		 mixtureSatProps_.hEvap()*psi0l;
+		 //mixtureSatProps_.hEvap()*psi0l;
+		 mixtureSatProps_.hEvap()*psi0ll;
 	}
 	
 	//if (evap_)
