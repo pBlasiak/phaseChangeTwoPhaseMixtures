@@ -166,7 +166,7 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 			IOobject::NO_WRITE
 	    ),
 	    U.mesh(),
-	    dimensionedScalar("TSourceSp", dimensionSet(1, -3, -1, 0, 0, 0, 0), 0.0)
+	    dimensionedScalar("TSourceSp", dimensionSet(1, -3, -1, -1, 0, 0, 0), 0.0)
 	),
 	TSourceSu_
 	(
@@ -284,14 +284,19 @@ Foam::phaseChangeTwoPhaseMixture::phaseChangeTwoPhaseMixture
 Foam::Pair<Foam::tmp<Foam::volScalarField>>
 Foam::phaseChangeTwoPhaseMixture::alphaSource() 
 {
-    volScalarField alphalCoeff(1.0/rho1() - alpha1()*(1.0/rho1() - 1.0/rho2()));
+    //volScalarField alphalCoeff(1.0/rho1() - alpha1()*(1.0/rho1() - 1.0/rho2()));
+    dimensionedScalar alphalSpCoeff(- (1.0/rho1() - 1.0/rho2()));
+    dimensionedScalar alphalSuCoeff(1.0/rho1());
     tmp<volScalarField> Sp = this->alphaSourceSp();
     tmp<volScalarField> Su = this->alphaSourceSu();
+	
+	//Info<< "vDotAlphal = " << alphaSourceSp_*alphalCoeff << endl;
+	//Info<< "vDotAlphal2 = " << alphaSourceSu_*alphalCoeff << endl;
 
     return Pair<tmp<volScalarField>>
     (
-        alphalCoeff*Sp,
-        alphalCoeff*Su
+        alphalSpCoeff*Sp,
+        alphalSuCoeff*Su
     );
 }
 
@@ -302,10 +307,12 @@ Foam::phaseChangeTwoPhaseMixture::pSource()
     tmp<volScalarField> Sp = this->pSourceSp();
     tmp<volScalarField> Su = this->pSourceSu();
 
+	//Info<< "vDotp = " << -Su*pCoeff << endl;
+
     return Pair<tmp<volScalarField>>
 	(
 	    pCoeff*Sp, 
-		pCoeff*Su
+		-pCoeff*Su
 	);
 }
 
@@ -315,10 +322,14 @@ Foam::phaseChangeTwoPhaseMixture::TSource()
 	tmp<volScalarField> Sp = this->TSourceSp();
 	tmp<volScalarField> Su = this->TSourceSu();
 
+	//Info<< "vDotT = " << Su << endl;
+
 	return Pair<tmp<volScalarField>>
 	(
-			satProps_->hEvap()*Sp,
-			satProps_->hEvap()*Su
+			//satProps_->hEvap()*Sp,
+			//satProps_->hEvap()*Su
+			tmp<volScalarField>(satProps_->hEvap()*Sp), 
+			tmp<volScalarField>(Su)
 	);
 }
 

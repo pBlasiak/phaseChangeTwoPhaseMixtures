@@ -88,7 +88,7 @@ void Foam::phaseChangeTwoPhaseMixtures::Tanasawa::j()
 Foam::tmp<Foam::volScalarField>
 Foam::phaseChangeTwoPhaseMixtures::Tanasawa::alphaSourceSp() 
 {
-	alphaSourceSp_ = (je_ - jc_)*HW_->magGradLimitedAlphal();
+	alphaSourceSp_ = (jc_ + je_)*HW_->magGradLimitedAlphal();
 	return alphaSourceSp_;
 	//return Pair<tmp<volScalarField>>
 	//(
