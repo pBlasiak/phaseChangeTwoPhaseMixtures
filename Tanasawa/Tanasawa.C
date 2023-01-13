@@ -117,7 +117,7 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::pSourceSp()
 	if (isHardtWondra())
 	{
 		HW_->spread(jc_, je_);
-		return HW_->rhoSourcel(); 
+		return HW_->rhoSourcel()*pos(p()-pSat())/max(p()-pSat(),1E-6*pSat()); 
 	}
 	else
 	{

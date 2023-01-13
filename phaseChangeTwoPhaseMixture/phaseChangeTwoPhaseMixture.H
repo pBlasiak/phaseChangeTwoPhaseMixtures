@@ -43,7 +43,6 @@ SourceFiles
 #include "autoPtr.H"
 #include "Pair.H"
 #include "SaturationProperties.H"
-//#include "SaturationPropertiesModels/SaturationProperties/SaturationProperties.H"
 #include "HardtWondra.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -187,16 +186,34 @@ public:
 			return isHW_;
 		}
 
+        //- Return const-access to the pressure field
+		const volScalarField& p() const
+		{
+			return satProps_->p();
+		}
+
         //- Return const-access to the temperature field
 		const volScalarField& T() const
 		{
 			return satProps_->T();
 		}
 
+        //- Return const-access to the global saturation temperature
+        const dimensionedScalar& TSatG() const
+        {
+            return satProps_->TSatG();
+        }
+
         //- Return const-access to the saturation temperature
 		const volScalarField& TSat() const
 		{
 			return satProps_->TSat();
+		}
+
+        //- Return const-access to the saturation pressure
+		const dimensionedScalar& pSat() const
+		{
+			return satProps_->pSat();
 		}
 
         //- Return const-access to the enthalpy of evaporation
