@@ -42,13 +42,15 @@ License
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 void Foam::HardtWondra::calcLimitedAlphal()
 {
-	limitedAlphal_ = min(max(alphalRef_, scalar(0)), scalar(1));
+	//limitedAlphal_ = min(max(alphalRef_, scalar(0)), scalar(1));
+	limitedAlphal_ = alphalRef_;
 }
 
 void Foam::HardtWondra::calcMagGradLimitedAlphal()
 {
 	calcLimitedAlphal();
-	magGradLimitedAlphal_ = mag(fvc::grad(limitedAlphal_));
+	//magGradLimitedAlphal_ = mag(fvc::grad(limitedAlphal_));
+	magGradLimitedAlphal_ = mag(fvc::grad(alphalRef_));
 }
 
 

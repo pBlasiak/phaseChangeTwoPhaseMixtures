@@ -122,7 +122,7 @@ Foam::phaseChangeTwoPhaseMixtures::Tanasawa::pSourceSp()
 	else
 	{
 		pSourceSu_ = (jc_ - je_)*HW_->magGradLimitedAlphal();
-		return pSourceSu_;
+		return pSourceSu_*pos(p()-pSat())/max(p()-pSat(),1E-6*pSat());
 	}
 	//return Pair<tmp<volScalarField> >
 	//(
