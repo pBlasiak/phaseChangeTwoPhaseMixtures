@@ -55,21 +55,35 @@ Foam::SaturationProperties::New
     Info<< "Selecting "
         << SaturationPropertiesTypeName << endl;
 
-    componentsConstructorTable::iterator cstrIter =
-        componentsConstructorTablePtr_
-            ->find(SaturationPropertiesTypeName);
+    auto* ctorPtr = componentsConstructorTable(SaturationPropertiesTypeName);
 
-    if (cstrIter == componentsConstructorTablePtr_->end())
+    //componentsConstructorTable::iterator cstrIter =
+    //    componentsConstructorTablePtr_
+    //        ->find(SaturationPropertiesTypeName);
+
+    //if (cstrIter == componentsConstructorTablePtr_->end())
+    //{
+    //    FatalErrorInFunction
+    //        << "Unknown SaturationProperties type "
+    //        << SaturationPropertiesTypeName << endl << endl
+    //        << "Valid  SaturationPropertiess are : " << endl
+    //        << componentsConstructorTablePtr_->sortedToc()
+    //        << exit(FatalError);
+    //}
+
+    //return autoPtr<SaturationProperties>(cstrIter()(U, phi));
+    if (!ctorPtr)
     {
-        FatalErrorInFunction
-            << "Unknown SaturationProperties type "
-            << SaturationPropertiesTypeName << endl << endl
-            << "Valid  SaturationPropertiess are : " << endl
-            << componentsConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            phaseChangePropertiesDict,
+            "SaturationProperties",
+            SaturationPropertiesTypeName,
+            *componentsConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    return autoPtr<SaturationProperties>(cstrIter()(U, phi));
+    return autoPtr<SaturationProperties>(ctorPtr(U, phi));
 }
 
 

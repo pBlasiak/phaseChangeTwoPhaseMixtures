@@ -49,7 +49,7 @@ Foam::thermalProperty::New
         )
     );
 
-    word thermalPropertyTypeName
+    const word thermalPropertyTypeName
     (
         transportPropertiesDict.lookup(thermProp + "Model")
     );
@@ -57,21 +57,26 @@ Foam::thermalProperty::New
     Info<< "Selecting "
         << thermalPropertyTypeName << " for " << thermProp << endl;
 
-    componentsConstructorTable::iterator cstrIter =
-        componentsConstructorTablePtr_
-            ->find(thermalPropertyTypeName);
+    auto* ctorPtr = componentsConstructorTable(thermalPropertyTypeName);
 
-    if (cstrIter == componentsConstructorTablePtr_->end())
+    //componentsConstructorTable::iterator cstrIter =
+    //    componentsConstructorTablePtr_
+    //        ->find(thermalPropertyTypeName);
+
+    //if (cstrIter == componentsConstructorTablePtr_->end())
+    if (!ctorPtr)
     {
-        FatalErrorInFunction
-            << "Unknown thermalProperty type "
-            << thermalPropertyTypeName << endl << endl
-            << "Valid  thermalPropertys are : " << endl
-            << componentsConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            transportPropertiesDict,
+            "thermalProperty",
+            thermalPropertyTypeName,
+            *componentsConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    return autoPtr<thermalProperty>(cstrIter()(U, phi));
+    //return autoPtr<thermalProperty>(cstrIter()(U, phi));
+    return autoPtr<thermalProperty>(ctorPtr(U, phi));
 }
 
 

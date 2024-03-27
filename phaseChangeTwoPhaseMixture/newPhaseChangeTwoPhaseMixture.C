@@ -55,21 +55,36 @@ Foam::phaseChangeTwoPhaseMixture::New
     Info<< "Selecting phaseChange model "
         << phaseChangeTwoPhaseMixtureTypeName << endl;
 
-    componentsConstructorTable::iterator cstrIter =
-        componentsConstructorTablePtr_
-            ->find(phaseChangeTwoPhaseMixtureTypeName);
+    //componentsConstructorTable::iterator cstrIter =
+    //    componentsConstructorTablePtr_
+    //        ->find(phaseChangeTwoPhaseMixtureTypeName);
 
-    if (cstrIter == componentsConstructorTablePtr_->end())
+    //if (cstrIter == componentsConstructorTablePtr_->end())
+    //{
+    //    FatalErrorInFunction
+    //        << "Unknown phaseChangeTwoPhaseMixture type "
+    //        << phaseChangeTwoPhaseMixtureTypeName << endl << endl
+    //        << "Valid  phaseChangeTwoPhaseMixtures are : " << endl
+    //        << componentsConstructorTablePtr_->sortedToc()
+    //        << exit(FatalError);
+    //}
+
+    //return autoPtr<phaseChangeTwoPhaseMixture>(cstrIter()(U, phi));
+
+    auto* ctorPtr = componentsConstructorTable(phaseChangeTwoPhaseMixtureTypeName);
+
+    if (!ctorPtr)
     {
-        FatalErrorInFunction
-            << "Unknown phaseChangeTwoPhaseMixture type "
-            << phaseChangeTwoPhaseMixtureTypeName << endl << endl
-            << "Valid  phaseChangeTwoPhaseMixtures are : " << endl
-            << componentsConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            phaseChangePropertiesDict,
+            "phaseChangeTwoPhaseMixture",
+            phaseChangeTwoPhaseMixtureTypeName,
+            *componentsConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    return autoPtr<phaseChangeTwoPhaseMixture>(cstrIter()(U, phi));
+    return autoPtr<phaseChangeTwoPhaseMixture>(ctorPtr(U, phi));
 }
 
 

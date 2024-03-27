@@ -7,6 +7,7 @@ targetType=libso
 set -x
 
 wclean
-wmake -with-bear $targetType 
+#wmake -with-bear $targetType 
+wmake $targetType 
 
 #------------------------------------------------------------------------------
